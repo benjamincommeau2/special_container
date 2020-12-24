@@ -145,9 +145,9 @@ to_string() {
   tmp +="list_.size()="+std::to_string(list_.size());
   tmp += "\n";
   while (itm != map_.end() && itl != list_.end()) {
-    tmp += itm->first->key_.to_string() + " ";
-    tmp += itm->first->val_.to_string() + " ";
-    tmp += std::to_string(itm->first->clr_) + " | ";
+    tmp += (**itm).key_.to_string() + " ";
+    tmp += (**itm).val_.to_string() + " ";
+    tmp += std::to_string((**itm).clr_) + " | ";
     tmp += itl->key_.to_string() + " ";
     tmp += itl->val_.to_string() + " ";
     tmp += std::to_string(itl->clr_) + "\n";
@@ -203,11 +203,11 @@ try_emplace(const Key& key, const Val& val) {
     //std::cout << "key exists" << std::endl;
     if ((**iter_bool_map_.first).clr_ != clr_) {
       // std::cout << "key is cleared" << std::endl;
-      iter_bool_map_.first->first->clr_ = clr_;
-      iter_bool_map_.first->first->val_ = val;
-      list_.splice(list_begin_, list_, iter_bool_map_.first->first);
+      (**iter_bool_map_.first).clr_ = clr_;
+      (**iter_bool_map_.first).val_ = val;
+      list_.splice(list_begin_, list_, *iter_bool_map_.first);
       iter_bool_map_.second = true;
-      list_begin_ = iter_bool_map_.first->first;
+      list_begin_ = *iter_bool_map_.first;
     } else {
       // std::cout << "key is not cleared" << std::endl;
       iter_bool_map_.second = false;
@@ -218,9 +218,9 @@ try_emplace(const Key& key, const Val& val) {
     if (list_it_->clr_ != clr_) {
       // std::cout << "a key is reusable" << std::endl;
       auto nh = map_.extract(list_it_);
-      nh.key()->key_ = key;
-      nh.key()->val_ = val;
-      nh.key()->clr_ = clr_;
+      (*nh.value()).key_ = key;
+      (*nh.value()).val_= val;
+      (*nh.value()).clr_ = clr_;
       map_.insert(std::move(nh));
       iter_bool_map_.first = map_.find(list_it_);
       iter_bool_map_.second = true;
@@ -232,7 +232,7 @@ try_emplace(const Key& key, const Val& val) {
       list_it_->val_ = val;
       list_it_->clr_ = clr_;
       list_it_->key_ = key;
-      iter_bool_map_ = map_.try_emplace(list_it_,0);
+      iter_bool_map_ = map_.insert(list_it_);
       list_.push_front(T());
       list_.begin()->clr_ = clr_;
       list_begin_ = list_it_;

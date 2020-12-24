@@ -1,27 +1,6 @@
 In file included from testMap.cpp:30:
 Map.hpp: In instantiation of ‘Map<Key, Val, Compare>::IterBoolMapT Map<Key, Val, Compare>::try_emplace(const Key&, const Val&) [with Key = main()::intint; Val = main()::intstr; Compare = std::less<main()::intint>; Map<Key, Val, Compare>::IterBoolMapT = std::pair<std::_Rb_tree_const_iterator<std::_List_iterator<Map<main()::intint, main()::intstr>::T> >, bool>]’:
 testMap.cpp:153:45:   required from here
-Map.hpp:206:29: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
-  206 |       iter_bool_map_.first->first->clr_ = clr_;
-      |       ~~~~~~~~~~~~~~~~~~~~~~^~~~~
-Map.hpp:207:29: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
-  207 |       iter_bool_map_.first->first->val_ = val;
-      |       ~~~~~~~~~~~~~~~~~~~~~~^~~~~
-Map.hpp:208:62: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
-  208 |       list_.splice(list_begin_, list_, iter_bool_map_.first->first);
-      |                                        ~~~~~~~~~~~~~~~~~~~~~~^~~~~
-Map.hpp:210:43: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
-  210 |       list_begin_ = iter_bool_map_.first->first;
-      |                     ~~~~~~~~~~~~~~~~~~~~~~^~~~~
-Map.hpp:221:10: error: ‘class std::_Node_handle<std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::allocator<std::_Rb_tree_node<std::_List_iterator<Map<main()::intint, main()::intstr>::T> > > >’ has no member named ‘key’
-  221 |       nh.key()->key_ = key;
-      |       ~~~^~~
-Map.hpp:222:10: error: ‘class std::_Node_handle<std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::allocator<std::_Rb_tree_node<std::_List_iterator<Map<main()::intint, main()::intstr>::T> > > >’ has no member named ‘key’
-  222 |       nh.key()->val_ = val;
-      |       ~~~^~~
-Map.hpp:223:10: error: ‘class std::_Node_handle<std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::_List_iterator<Map<main()::intint, main()::intstr>::T>, std::allocator<std::_Rb_tree_node<std::_List_iterator<Map<main()::intint, main()::intstr>::T> > > >’ has no member named ‘key’
-  223 |       nh.key()->clr_ = clr_;
-      |       ~~~^~~
 Map.hpp:235:29: error: ‘Map<main()::intint, main()::intstr>::MapT’ {aka ‘class std::set<std::_List_iterator<Map<main()::intint, main()::intstr>::T>, Map<main()::intint, main()::intstr>::LessIter, std::allocator<std::_List_iterator<Map<main()::intint, main()::intstr>::T> > >’} has no member named ‘try_emplace’; did you mean ‘emplace’?
   235 |       iter_bool_map_ = map_.try_emplace(list_it_,0);
       |                        ~~~~~^~~~~~~~~~~
@@ -37,17 +16,30 @@ Map.hpp:149:17: error: ‘const struct std::_List_iterator<Map<main()::intint, m
 Map.hpp:150:32: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
   150 |     tmp += std::to_string(itm->first->clr_) + " | ";
       |                           ~~~~~^~~~~
-In file included from /usr/include/c++/10/bits/hashtable.h:37,
-                 from /usr/include/c++/10/unordered_map:46,
-                 from /usr/include/c++/10/functional:61,
-                 from /usr/include/c++/10/pstl/glue_algorithm_defs.h:13,
-                 from /usr/include/c++/10/algorithm:74,
-                 from testMap.cpp:17:
-/usr/include/c++/10/bits/node_handle.h:70:7: warning: ‘std::_Node_handle_common<_Val, _NodeAlloc>::~_Node_handle_common() noexcept [with _Val = std::_List_iterator<Map<main()::intint, main()::intstr>::T>; _NodeAlloc = std::allocator<std::_Rb_tree_node<std::_List_iterator<Map<main()::intint, main()::intstr>::T> > >]’ used but never defined
-   70 |       ~_Node_handle_common() { _M_destroy(); }
-      |       ^
-In file included from /usr/include/c++/10/list:63,
-                 from testMap.cpp:21:
-/usr/include/c++/10/bits/stl_list.h:286:7: warning: ‘std::_List_const_iterator< <template-parameter-1-1> >::_List_const_iterator(const iterator&) noexcept [with _Tp = Map<main()::intint, main()::intstr>::T]’ used but never defined
-  286 |       _List_const_iterator(const iterator& __x) _GLIBCXX_NOEXCEPT
-      |       ^~~~~~~~~~~~~~~~~~~~
+In file included from testMap.cpp:30:
+Map.hpp: In instantiation of ‘std::string Map<Key, Val, Compare>::to_string() [with Key = main()::intint; Val = main()::intstr; Compare = std::less<main()::intint>; std::string = std::__cxx11::basic_string<char>]’:
+testMap.cpp:154:31:   required from here
+Map.hpp:148:17: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  148 |     tmp += itm->first->key_.to_string() + " ";
+      |            ~~~~~^~~~~
+Map.hpp:149:17: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  149 |     tmp += itm->first->val_.to_string() + " ";
+      |            ~~~~~^~~~~
+Map.hpp:150:32: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  150 |     tmp += std::to_string(itm->first->clr_) + " | ";
+      |                           ~~~~~^~~~~
+In file included from testMap.cpp:30:
+Map.hpp: In instantiation of ‘std::string Map<Key, Val, Compare>::to_string() [with Key = main()::intint; Val = main()::intstr; Compare = std::less<main()::intint>; std::string = std::__cxx11::basic_string<char>]’:
+testMap.cpp:154:31:   required from here
+Map.hpp:149:17: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  149 |     tmp += itm->first->val_.to_string() + " ";
+      |            ~~~~~^~~~~
+Map.hpp:150:32: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  150 |     tmp += std::to_string(itm->first->clr_) + " | ";
+      |                           ~~~~~^~~~~
+In file included from testMap.cpp:30:
+Map.hpp: In instantiation of ‘std::string Map<Key, Val, Compare>::to_string() [with Key = main()::intint; Val = main()::intstr; Compare = std::less<main()::intint>; std::string = std::__cxx11::basic_string<char>]’:
+testMap.cpp:154:31:   required from here
+Map.hpp:150:32: error: ‘const struct std::_List_iterator<Map<main()::intint, main()::intstr>::T>’ has no member named ‘first’
+  150 |     tmp += std::to_string(itm->first->clr_) + " | ";
+      |                           ~~~~~^~~~~
