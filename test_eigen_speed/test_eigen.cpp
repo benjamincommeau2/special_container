@@ -8,8 +8,9 @@
 #include <complex>
 #include <chrono>
 #include <list>
-#include </home/linuxfreebird/code/eigen3.3.9/eigen-3.3.9/Eigen/Dense>
-#include </home/linuxfreebird/code/eigen3.3.9/eigen-3.3.9/Eigen/Sparse>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+//#include </home/linuxfreebird/code/eigen3.3.9/eigen-3.3.9/Eigen/Sparse>
 #include <iomanip>
 
 class Timer {
