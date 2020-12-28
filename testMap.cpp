@@ -109,7 +109,7 @@ void test_list_slice() {
   }
 }
 
-int main() {
+void quick_print_test() {
   struct intint {
     int x_; int y_;
     intint() {};
@@ -174,5 +174,50 @@ int main() {
   tmap.try_emplace(intint(5,6),intstr(7,"b"));
   tmap.try_emplace(intint(9,10),intstr(11,"c"));
   std::cout << tmap.to_string() << std::endl;
+}
+
+int main() {
+  struct K {
+    int x; int y;
+    K() {};
+    K(const int& x_, const int& y_) { x = x_; y = y_; }
+    bool operator <(const K& rhs) const {
+      return x != rhs.x ? x < rhs.x : y < rhs.y;
+    }
+    std::string to_string() {
+      std::string tmp = "";
+      tmp += "(";
+      tmp += std::to_string(x);
+      tmp += ",";
+      tmp += std::to_string(y);
+      tmp += ")";
+      return tmp;
+    }
+  };
+  struct V {
+    std::complex<double> v;
+    V() {}
+    V(const std::complex<double>& v_) {v = v_;}
+    V(const double& r_, const double& i_) {v = std::complex<double>(r_, i_);}
+    std::string to_string() {
+      return "(" + std::to_string(v.real()) + " "
+      + std::to_string(v.imag()) + ")";
+    }
+  };
+  struct T {
+    K k; V v;
+    T() {}
+    T(const K& k_, const V& v_) { k = k_; v = v_; }
+    T(const int& x_, const int& y_, const double& r_, const double& i_) {
+      k = K(x_, y_); v = V(r_, i_);
+    }
+  };
+  Map<K, V> map;
+  std::vector<T> input = {T(1,2,3,4)};
+  std::vector<T> output = {T(1,2,3,4)};
+  for (int i = 0; i < input.size(); i++) {
+    map.try_emplace(input[i].k,input[i].v);
+  }
+  std::cout << map.to_string() << std::endl;
   return 0;
 }

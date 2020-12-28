@@ -78,6 +78,7 @@ class Map {
   void hard_clear();
   void setClrMax(const Clr& x);
   Clr getClr();
+  IterListT find(const Key& key);
 
  private:
   Clr clr_ = 1;
@@ -94,6 +95,15 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+IterListT
+Map<Key, Val, Compare>::
+find(const Key& key) {
+  setIterList(list_it_, key);
+  return set_.find(list_it_);
+}
 
 template<class Key, class Val, class Compare>
 Map<Key, Val, Compare>::
@@ -193,11 +203,11 @@ try_emplace(const Key& key, const Val& val) {
   if (list_.size() > 0) {
   } else {
     list_.push_back(T());
-    list_.begin()->clr_ = clr_;
+    list_.begin() -> clr_ = clr_;
     list_begin_ = list_.end();
   }
   list_it_ = list_.begin();
-  list_it_->key_ = key; 
+  list_it_ -> key_ = key; 
   iter_bool_set_.first = set_.find(list_it_);
   if (iter_bool_set_.first != set_.end()) {
     //std::cout << "key exists" << std::endl;
@@ -215,7 +225,7 @@ try_emplace(const Key& key, const Val& val) {
   } else {
     // std::cout << "key does not exist" << std::endl;
     list_it_ = list_.end(); list_it_--;
-    if (list_it_->clr_ != clr_) {
+    if (list_it_ -> clr_ != clr_) {
       // std::cout << "a key is reusable" << std::endl;
       auto nh = set_.extract(list_it_);
       (*nh.value()).key_ = key;
@@ -224,17 +234,17 @@ try_emplace(const Key& key, const Val& val) {
       set_.insert(std::move(nh));
       iter_bool_set_.first = set_.find(list_it_);
       iter_bool_set_.second = true;
-      list_.splice(list_begin_,list_,list_it_);
+      list_.splice(list_begin_, list_, list_it_);
       list_begin_ = list_it_;
     } else {
       // std::cout << "no key is reusable" << std::endl;
       list_it_ = list_.begin();
-      list_it_->val_ = val;
-      list_it_->clr_ = clr_;
-      list_it_->key_ = key;
+      list_it_ -> val_ = val;
+      list_it_ -> clr_ = clr_;
+      list_it_ -> key_ = key;
       iter_bool_set_ = set_.insert(list_it_);
       list_.push_front(T());
-      list_.begin()->clr_ = clr_;
+      list_.begin() -> clr_ = clr_;
       list_begin_ = list_it_;
     }
   }
