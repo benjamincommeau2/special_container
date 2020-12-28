@@ -2,15 +2,12 @@
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
-//#include <eigen3/Eigen/Dense>
-//#include <eigen3/Eigen/Sparse>
 #include <random>
 #include <complex>
 #include <chrono>
 #include <list>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-//#include </home/linuxfreebird/code/eigen3.3.9/eigen-3.3.9/Eigen/Sparse>
 #include <iomanip>
 
 class Timer {
