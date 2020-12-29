@@ -28,6 +28,7 @@ The rationale for the trailing underscore and the global/static prefixes is that
 #include <string>
 #include <random>
 #include "Matrix.hpp"
+#include <sstream>
 
 
 class Timer {
@@ -53,16 +54,28 @@ class Timer {
 };
 
 typedef std::complex<double> V;
+typedef uint32_t I;
+
+struct T {
+  I x; I y; V v;
+  T() {}
+  T(const I& x_, const I& y_, const double& r_, const double& i_) {
+    x = x_; y = y_; v = V(r_,i_);
+  }
+  double r() {return v.real();}
+  double i() {return v.imag();}
+};
 
 int main() {
   Matrix mat;
-  std::vector<V> v =        {V(1.1,2.1),V(3.1,4.1),V(-3.1,-4.1)};
-  std::vector<uint32_t> x = {1         ,3         ,4};
-  std::vector<uint32_t> y = {2         ,4         ,3};
-  for(uint32_t i = 0; i< v.size(); i++) {
-    mat.add(x[i],y[i],v[i]);
+  std::vector<T> t = {T(1,1,1,1),T(1,2,3,4),T(2,2,6,4),T(2,1,-3,4),T(3,4,8,4),
+    T(4,3,5,-4),T(5,5,5,5)};
+  for(uint32_t i = 0; i< t.size(); i++) {
+    std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
+    mat.add(t[i].x,t[i].y,t[i].v);
   }
   std::cout << mat.to_string() << std::endl;
+  std::cout << "start transpose" << std::endl;
   mat.transpose();
   std::cout << mat.to_string() << std::endl;
   return 0;

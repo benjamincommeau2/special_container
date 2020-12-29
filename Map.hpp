@@ -28,6 +28,8 @@ The rationale for the trailing underscore and the global/static prefixes is that
 #include <cmath>
 #include <string>
 #include <random>
+#include <iomanip>
+#include <sstream>
 
 #ifndef MAP_HPP
 #define MAP_HPP
@@ -81,6 +83,12 @@ class Map {
   Clr getClrMax();
   IterSetT find(const Key& key);
   void flatten_clear();
+  void moveToFront(IterListT& it);
+
+  /* //////////////////////////////////////////////////////////////
+  Public Variables
+  */ //////////////////////////////////////////////////////////////
+
   SetT set_;
   ListT list_;
 
@@ -92,11 +100,20 @@ class Map {
   //IterListT iter_list_clr_end_ = list_.end();
   IterListT list_it_ = list_.begin();
   IterListT list_begin_ = list_.begin();
+
 };
 
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+moveToFront(IterListT& it) {
+  list_.splice(list_begin_, list_, it);
+  list_begin_ = it;
+}
 
 template<class Key, class Val, class Compare>
 void
@@ -176,26 +193,27 @@ Map<Key, Val, Compare>::
 to_string() {
   auto itm = set_.begin();
   auto itl = list_.begin();
-  std::string tmp = "";
-  tmp += "list_.begin() -> ";
-  tmp += itl->key_.to_string() + " ";
-  tmp += itl->val_.to_string() + " ";
-  tmp += std::to_string(itl->clr_) + "\n";
-  tmp +="set_.size()="+std::to_string(set_.size());
-  tmp += " | ";
-  tmp +="list_.size()="+std::to_string(list_.size());
-  tmp += "\n";
+  std::stringstream tmp ;
+  tmp << std::fixed << std::setprecision(2);
+  tmp << "list_.begin() -> ";
+  tmp << itl->key_.to_string() << " ";
+  tmp << itl->val_.to_string() << " ";
+  tmp << std::to_string(itl->clr_) << "\n";
+  tmp << "set_.size()=" << std::to_string(set_.size());
+  tmp << " | ";
+  tmp << "list_.size()=" << std::to_string(list_.size());
+  tmp << "\n";
   itl++;
   while (itm != set_.end() && itl != list_.end()) {
-    tmp += (**itm).key_.to_string() + " ";
-    tmp += (**itm).val_.to_string() + " ";
-    tmp += std::to_string((**itm).clr_) + " | ";
-    tmp += itl->key_.to_string() + " ";
-    tmp += itl->val_.to_string() + " ";
-    tmp += std::to_string(itl->clr_) + "\n";
+    tmp << (**itm).key_.to_string() << " ";
+    tmp << (**itm).val_.to_string() << " ";
+    tmp << std::to_string((**itm).clr_) << " | ";
+    tmp << itl->key_.to_string() << " ";
+    tmp << itl->val_.to_string() << " ";
+    tmp << std::to_string(itl->clr_) << "\n";
     itm++; itl++;
   }
-  return tmp;
+  return tmp.str();
 }
 
 template<class Key, class Val, class Compare>
@@ -279,6 +297,8 @@ try_emplace(const Key& key, const Val& val) {
       list_.push_front(T());
       list_.begin() -> clr_ = clr_;
       list_begin_ = list_it_;
+      std::cout << "val=" << val.v_.real() << std::endl;
+      std::cout << to_string() << std::endl;
     }
   }
   return  iter_bool_set_;

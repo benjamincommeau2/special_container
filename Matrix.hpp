@@ -29,6 +29,8 @@ The rationale for the trailing underscore and the global/static prefixes is that
 #include <string>
 #include <random>
 #include "Map.hpp"
+#include <sstream>
+#include <iomanip>
 
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
@@ -59,7 +61,11 @@ class Matrix {
     V() {}
     V(const Value& v) {v_ = v;}
     std::string to_string() {
-      return "("+std::to_string(v_.real())+","+std::to_string(v_.imag())+")";
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(2);
+      stream << "(" << (v_.real()) << ","
+        << (v_.imag()) << ")";
+      return stream.str();
     }
   };
 
@@ -86,16 +92,18 @@ Explicit Methods
 void
 Matrix::
 transpose() {
-  if(map_.getClr() == map_.getClrMax()) { map_.flatten_clear(); }
+  if (map_.getClr() == map_.getClrMax()) { map_.flatten_clear(); }
   auto list_it = map_.list_.begin();
   list_it++;
   auto list_begin = map_.list_.begin();
   auto set_it_0 = map_.set_.begin();
   auto set_it_1 = map_.set_.begin();
   Index x; Index y;
-  while(list_it != map_.list_.end()) {
-    if(list_it->clr_ == map_.getClr()) {
-      // if non-cleared key
+  while (list_it != map_.list_.end()) {
+    std::cout << map_.to_string() << std::endl;
+    std::cout << list_it->key_.x_ << " " << list_it->key_.y_ << std::endl;
+    if (list_it->clr_ == map_.getClr()) {
+      std::cout << "if non-cleared key" << std::endl;
       set_it_0 = map_.set_.find(list_it);
       x = list_it->key_.x_;
       y = list_it->key_.y_;
@@ -103,7 +111,7 @@ transpose() {
       list_begin->key_.y_ = x;
       set_it_1 = map_.set_.find(list_begin);
       if (set_it_1 != map_.set_.end()) {
-        // extract
+        std::cout << "extract 2 keys" << std::endl;
         auto nh_1 = map_.set_.extract(set_it_1);
         auto nh_0 = map_.set_.extract(set_it_0);
         // modify
@@ -113,25 +121,30 @@ transpose() {
         nh_0.value()->key_.x_ = y;
         nh_0.value()->key_.y_ = x;
         nh_0.value()->clr_ = map_.getClr()+1;
-        // re-insert
+        std::cout << "re-insert" << std::endl;
         map_.set_.insert(std::move(nh_0));
         map_.set_.insert(std::move(nh_1));
+        std::cout << "move to front" << std::endl;
+        map_.moveToFront(list_it);
+        map_.moveToFront(list_begin);
       } else {
-        // extract
+        std::cout << "extract 1 key" << std::endl;
         auto nh_0 = map_.set_.extract(set_it_0);
         // modify
         nh_0.value()->key_.x_ = y;
         nh_0.value()->key_.y_ = x;
         nh_0.value()->clr_ = map_.getClr()+1;
-        // re-insert
+        std::cout << "re-insert" << std::endl;
         map_.set_.insert(std::move(nh_0));
+        std::cout << "move to front" << std::endl;
+        map_.moveToFront(list_it);
       }
       list_begin->key_.x_;
     } else if(list_it->clr_ == (map_.getClr()+1)) {
-      // else if newly transposed key
+      std::cout << "else if newly transposed key" << std::endl;
       // do nothing
     } else {
-      // key is cleared
+      std::cout << "key is cleared" << std::endl;
       list_it = map_.list_.end();
     }
     list_it++;
