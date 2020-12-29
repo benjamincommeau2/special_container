@@ -32,28 +32,151 @@ The rationale for the trailing underscore and the global/static prefixes is that
 
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
-template<class Key, class Val, class Compare = std::less<Key>>
 class Matrix {
  public:
   typedef uint32_t Index;
-  typedef std::complex<double> Value;
   /* //////////////////////////////////////////////////////////////
-  List of T's
+  Key
+  */ //////////////////////////////////////////////////////////////
+  struct K {
+    Index x_; Index y_;
+    K() {}
+    K(const Index& x, const Index& y) { x_ = x; y_ = y; } 
+    std::string to_string() {
+      return "("+std::to_string(x_)+","+std::to_string(y_)+")";
+    }
+    bool operator <(const K& k) const {
+      return x_ != k.x_ ? x_ < k.x_ : y_ < k.y_;
+    }
+  };
+  /* //////////////////////////////////////////////////////////////
+  Value
   */ //////////////////////////////////////////////////////////////
 
+  typedef std::complex<double> Value;
+  struct V {
+    Value v_;
+    V() {}
+    V(const Value& v) {v_ = v;}
+    std::string to_string() {
+      return "("+std::to_string(v_.real())+","+std::to_string(v_.imag())+")";
+    }
+  };
 
   /* //////////////////////////////////////////////////////////////
   Methods
   */ //////////////////////////////////////////////////////////////
+  std::string to_string();
+  void clr();
+  Map<K,V>::IterSetT find(const Index& x, const Index& y);
+  Map<K,V>::IterBoolSetT
+    add(const Index& x, const Index& y, const Value& v);
+  void transpose();
 
 
  private:
- Map map_();
+  Map<K,V> map_;
+  Map<Matrix::K,Matrix::V>::IterListT it_;
 };
 
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
 
+void
+Matrix::
+transpose() {
+  if(map_.getClr() == map_.getClrMax()) { map_.flatten_clear(); }
+  auto list_it = map_.list_.begin();
+  list_it++;
+  auto list_begin = map_.list_.begin();
+  auto set_it_0 = map_.set_.begin();
+  auto set_it_1 = map_.set_.begin();
+  Index x; Index y;
+  while(list_it != map_.list_.end()) {
+    if(list_it->clr_ == map_.getClr()) {
+      // if non-cleared key
+      set_it_0 = map_.set_.find(list_it);
+      x = list_it->key_.x_;
+      y = list_it->key_.y_;
+      list_begin->key_.x_ = y;
+      list_begin->key_.y_ = x;
+      set_it_1 = map_.set_.find(list_begin);
+      if (set_it_1 != map_.set_.end()) {
+        // extract
+        auto nh_1 = map_.set_.extract(set_it_1);
+        auto nh_0 = map_.set_.extract(set_it_0);
+        // modify
+        nh_1.value()->key_.x_ = x;
+        nh_1.value()->key_.y_ = y;
+        nh_1.value()->clr_ = map_.getClr()+1;
+        nh_0.value()->key_.x_ = y;
+        nh_0.value()->key_.y_ = x;
+        nh_0.value()->clr_ = map_.getClr()+1;
+        // re-insert
+        map_.set_.insert(std::move(nh_0));
+        map_.set_.insert(std::move(nh_1));
+      } else {
+        // extract
+        auto nh_0 = map_.set_.extract(set_it_0);
+        // modify
+        nh_0.value()->key_.x_ = y;
+        nh_0.value()->key_.y_ = x;
+        nh_0.value()->clr_ = map_.getClr()+1;
+        // re-insert
+        map_.set_.insert(std::move(nh_0));
+      }
+      list_begin->key_.x_;
+    } else if(list_it->clr_ == (map_.getClr()+1)) {
+      // else if newly transposed key
+      // do nothing
+    } else {
+      // key is cleared
+      list_it = map_.list_.end();
+    }
+    list_it++;
+  }
+}
+
+std::string
+Matrix::
+to_string() {
+  return map_.to_string();
+}
+
+void
+Matrix::
+clr() {
+  map_.clear();
+}
+
+Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::IterSetT
+Matrix::
+find(const Matrix::Index& x, const Matrix::Index& y) {
+  return map_.find(Matrix::K(x,y));
+  //return it_;
+}
+
+Map<Matrix::K, Matrix::V, std::less<Matrix::K>>::IterBoolSetT
+Matrix::
+add(const Matrix::Index& x, const Matrix::Index& y, const Matrix::Value& v) {
+  Map<Matrix::K, Matrix::V, std::less<Matrix::K>>::IterBoolSetT it;
+  it.first = map_.find(K(x,y));
+  if(it.first != map_.end()) {
+    std::cout << "add->key is found" << std::endl;
+    std::cout << map_.to_string() << std::endl;
+    (**it.first).val_.v_ += v;
+    it.second = true;
+    std::cout << map_.to_string() << std::endl;
+    std::cout << "add->key is found" << std::endl;
+  } else {
+    std::cout << "add->key is not found" << std::endl;
+    std::cout << map_.to_string() << std::endl;
+    it = map_.try_emplace(K(x,y),V(v));
+    std::cout << map_.to_string() << std::endl;
+    std::cout << "add->key is not found" << std::endl;
+  }
+  return it;
+}
 
 #endif

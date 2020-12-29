@@ -78,14 +78,16 @@ class Map {
   void hard_clear();
   void setClrMax(const Clr& x);
   Clr getClr();
-  IterListT find(const Key& key);
+  Clr getClrMax();
+  IterSetT find(const Key& key);
+  void flatten_clear();
+  SetT set_;
+  ListT list_;
 
  private:
   Clr clr_ = 1;
   Clr clr_max_ = 0xFFFFFFFFFFFFFFFF;
-  SetT set_;
   IterBoolSetT iter_bool_set_;
-  ListT list_;
   //IterListT iter_list_ = list_.begin();
   //IterListT iter_list_clr_end_ = list_.end();
   IterListT list_it_ = list_.begin();
@@ -97,12 +99,37 @@ Explicit Methods
 */ //////////////////////////////////////////////////////////////
 
 template<class Key, class Val, class Compare>
+void
 Map<Key, Val, Compare>::
-IterListT
+flatten_clear() {
+  auto it = list_.begin();
+  while(it != list_.end()) {
+    if(it->clr_ != clr_) {
+      it->clr_ = 0;
+    } else {
+      it->clr_ = 1;
+    }
+    it++;
+  }
+  clr_ = 1;
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+IterSetT
 Map<Key, Val, Compare>::
 find(const Key& key) {
+  list_it_ = list_.begin();
   setIterList(list_it_, key);
   return set_.find(list_it_);
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+Clr
+Map<Key, Val, Compare>::
+getClrMax() {
+  return clr_max_;
 }
 
 template<class Key, class Val, class Compare>
@@ -148,12 +175,17 @@ std::string
 Map<Key, Val, Compare>::
 to_string() {
   auto itm = set_.begin();
-  auto itl = list_begin_;
+  auto itl = list_.begin();
   std::string tmp = "";
+  tmp += "list_.begin() -> ";
+  tmp += itl->key_.to_string() + " ";
+  tmp += itl->val_.to_string() + " ";
+  tmp += std::to_string(itl->clr_) + "\n";
   tmp +="set_.size()="+std::to_string(set_.size());
   tmp += " | ";
   tmp +="list_.size()="+std::to_string(list_.size());
   tmp += "\n";
+  itl++;
   while (itm != set_.end() && itl != list_.end()) {
     tmp += (**itm).key_.to_string() + " ";
     tmp += (**itm).val_.to_string() + " ";
@@ -192,6 +224,7 @@ setIterList(IterListT& it, const Key& key) {
   } else {
     list_.push_back(T(key));
     it = list_.begin();
+    it -> clr_ = clr_;
   }
 }
 
@@ -210,7 +243,7 @@ try_emplace(const Key& key, const Val& val) {
   list_it_ -> key_ = key; 
   iter_bool_set_.first = set_.find(list_it_);
   if (iter_bool_set_.first != set_.end()) {
-    //std::cout << "key exists" << std::endl;
+    std::cout << "key exists" << std::endl;
     if ((**iter_bool_set_.first).clr_ != clr_) {
       // std::cout << "key is cleared" << std::endl;
       (**iter_bool_set_.first).clr_ = clr_;
@@ -219,14 +252,14 @@ try_emplace(const Key& key, const Val& val) {
       iter_bool_set_.second = true;
       list_begin_ = *iter_bool_set_.first;
     } else {
-      // std::cout << "key is not cleared" << std::endl;
+      std::cout << "key is not cleared" << std::endl;
       iter_bool_set_.second = false;
     }
   } else {
-    // std::cout << "key does not exist" << std::endl;
+    std::cout << "key does not exist" << std::endl;
     list_it_ = list_.end(); list_it_--;
     if (list_it_ -> clr_ != clr_) {
-      // std::cout << "a key is reusable" << std::endl;
+      std::cout << "a key is reusable" << std::endl;
       auto nh = set_.extract(list_it_);
       (*nh.value()).key_ = key;
       (*nh.value()).val_= val;
@@ -237,7 +270,7 @@ try_emplace(const Key& key, const Val& val) {
       list_.splice(list_begin_, list_, list_it_);
       list_begin_ = list_it_;
     } else {
-      // std::cout << "no key is reusable" << std::endl;
+      std::cout << "no key is reusable" << std::endl;
       list_it_ = list_.begin();
       list_it_ -> val_ = val;
       list_it_ -> clr_ = clr_;
