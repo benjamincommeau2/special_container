@@ -101,6 +101,7 @@ int main() {
   for(uint32_t i = 0; i< tA.size(); i++) {
     A.add(tA[i].x,tA[i].y,tA[i].v);
   }
+  std::cout << "A=" << std::endl;
   std::cout << A.to_string() << std::endl;
   Matrix B;
   std::vector<T> tB = {
@@ -115,6 +116,7 @@ int main() {
   for(uint32_t i = 0; i< tB.size(); i++) {
     B.add(tB[i].x,tB[i].y,tB[i].v);
   }
+  std::cout << "B=" << std::endl;
   std::cout << B.to_string() << std::endl;
   Matrix C;
   std::vector<T> tC = {
@@ -135,11 +137,16 @@ int main() {
   for(uint32_t i = 0; i< tC.size(); i++) {
     C.add(tC[i].x,tC[i].y,tC[i].v);
   }
+  std::cout << "C=" << std::endl;
   std::cout << C.to_string() << std::endl;
-  Matrix Cn;
   B.transpose();
+  std::cout << "Transposed B" << std::endl;
+  Matrix Cn;
   Cn.ABteC(A,B,Cn);
+  std::cout << "Cn=" << std::endl;
   std::cout << Cn.to_string() << std::endl;
+  std::cout << "C=" << std::endl;
+  std::cout << C.to_string() << std::endl;
 
   return 0;
 }
