@@ -1,3 +1,4 @@
+clear
 opt="O3" # removes performance timing loops, compliant high optimization
 opt="O1" # allows performance timing loops
 script=testMatrix

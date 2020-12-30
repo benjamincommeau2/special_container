@@ -195,7 +195,8 @@ to_string() {
   auto itl = list_.begin();
   std::stringstream tmp ;
   tmp << std::fixed << std::setprecision(2);
-  tmp << "list_.begin() -> ";
+  tmp << "clr_=" << clr_;
+  tmp << " list_.begin() -> ";
   tmp << itl->key_.to_string() << " ";
   tmp << itl->val_.to_string() << " ";
   tmp << std::to_string(itl->clr_) << "\n";
@@ -261,7 +262,7 @@ try_emplace(const Key& key, const Val& val) {
   list_it_ -> key_ = key; 
   iter_bool_set_.first = set_.find(list_it_);
   if (iter_bool_set_.first != set_.end()) {
-    std::cout << "key exists" << std::endl;
+    //std::cout << "key exists" << std::endl;
     if ((**iter_bool_set_.first).clr_ != clr_) {
       // std::cout << "key is cleared" << std::endl;
       (**iter_bool_set_.first).clr_ = clr_;
@@ -270,14 +271,14 @@ try_emplace(const Key& key, const Val& val) {
       iter_bool_set_.second = true;
       list_begin_ = *iter_bool_set_.first;
     } else {
-      std::cout << "key is not cleared" << std::endl;
+     // std::cout << "key is not cleared" << std::endl;
       iter_bool_set_.second = false;
     }
   } else {
-    std::cout << "key does not exist" << std::endl;
+    //std::cout << "key does not exist" << std::endl;
     list_it_ = list_.end(); list_it_--;
     if (list_it_ -> clr_ != clr_) {
-      std::cout << "a key is reusable" << std::endl;
+     // std::cout << "a key is reusable" << std::endl;
       auto nh = set_.extract(list_it_);
       (*nh.value()).key_ = key;
       (*nh.value()).val_= val;
@@ -288,7 +289,7 @@ try_emplace(const Key& key, const Val& val) {
       list_.splice(list_begin_, list_, list_it_);
       list_begin_ = list_it_;
     } else {
-      std::cout << "no key is reusable" << std::endl;
+      //std::cout << "no key is reusable" << std::endl;
       list_it_ = list_.begin();
       list_it_ -> val_ = val;
       list_it_ -> clr_ = clr_;
@@ -297,8 +298,8 @@ try_emplace(const Key& key, const Val& val) {
       list_.push_front(T());
       list_.begin() -> clr_ = clr_;
       list_begin_ = list_it_;
-      std::cout << "val=" << val.v_.real() << std::endl;
-      std::cout << to_string() << std::endl;
+      //std::cout << "val=" << val.v_.real() << std::endl;
+      //std::cout << to_string() << std::endl;
     }
   }
   return  iter_bool_set_;

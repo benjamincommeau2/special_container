@@ -73,7 +73,7 @@ class Matrix {
   Methods
   */ //////////////////////////////////////////////////////////////
   std::string to_string();
-  void clr();
+  void clear();
   Map<K,V>::IterSetT find(const Index& x, const Index& y);
   Map<K,V>::IterBoolSetT
     add(const Index& x, const Index& y, const Value& v);
@@ -100,54 +100,60 @@ transpose() {
   auto set_it_1 = map_.set_.begin();
   Index x; Index y;
   while (list_it != map_.list_.end()) {
-    std::cout << map_.to_string() << std::endl;
-    std::cout << list_it->key_.x_ << " " << list_it->key_.y_ << std::endl;
-    if (list_it->clr_ == map_.getClr()) {
-      std::cout << "if non-cleared key" << std::endl;
+    //std::cout << map_.to_string() << std::endl;
+    //std::cout << list_it->key_.x_ << " " << list_it->key_.y_ << std::endl;
+    x = list_it->key_.x_;
+    y = list_it->key_.y_;
+    if (list_it->clr_ == map_.getClr() and x != y) {
+      list_begin = map_.list_.begin();
+      //std::cout << "if non-cleared key" << std::endl;
       set_it_0 = map_.set_.find(list_it);
-      x = list_it->key_.x_;
-      y = list_it->key_.y_;
       list_begin->key_.x_ = y;
       list_begin->key_.y_ = x;
       set_it_1 = map_.set_.find(list_begin);
       if (set_it_1 != map_.set_.end()) {
-        std::cout << "extract 2 keys" << std::endl;
+        //std::cout << "extract 2 keys" << std::endl;
         auto nh_1 = map_.set_.extract(set_it_1);
         auto nh_0 = map_.set_.extract(set_it_0);
         // modify
         nh_1.value()->key_.x_ = x;
         nh_1.value()->key_.y_ = y;
         nh_1.value()->clr_ = map_.getClr()+1;
+        list_begin = nh_1.value();
         nh_0.value()->key_.x_ = y;
         nh_0.value()->key_.y_ = x;
         nh_0.value()->clr_ = map_.getClr()+1;
-        std::cout << "re-insert" << std::endl;
+        //std::cout << "re-insert 2 keys" << std::endl;
         map_.set_.insert(std::move(nh_0));
         map_.set_.insert(std::move(nh_1));
-        std::cout << "move to front" << std::endl;
-        map_.moveToFront(list_it);
+        //std::cout << "move to front" << std::endl;
         map_.moveToFront(list_begin);
       } else {
-        std::cout << "extract 1 key" << std::endl;
+        //std::cout << "extract 1 key" << std::endl;
         auto nh_0 = map_.set_.extract(set_it_0);
         // modify
         nh_0.value()->key_.x_ = y;
         nh_0.value()->key_.y_ = x;
         nh_0.value()->clr_ = map_.getClr()+1;
-        std::cout << "re-insert" << std::endl;
+        //std::cout << "re-insert" << std::endl;
         map_.set_.insert(std::move(nh_0));
-        std::cout << "move to front" << std::endl;
-        map_.moveToFront(list_it);
+        //std::cout << "move to front" << std::endl;
       }
-      list_begin->key_.x_;
+      auto it = list_it;
+      list_it++;
+      map_.moveToFront(it);
     } else if(list_it->clr_ == (map_.getClr()+1)) {
-      std::cout << "else if newly transposed key" << std::endl;
+      //std::cout << "else if newly transposed key" << std::endl;
       // do nothing
-    } else {
-      std::cout << "key is cleared" << std::endl;
+      list_it++;
+    } else if (list_it->clr_ < map_.getClr()){
+      //std::cout << "key is cleared" << std::endl;
       list_it = map_.list_.end();
+    } else {
+      //std::cout << "do nothing" << std::endl;
+      list_it->clr_ = map_.getClr()+1;
+      list_it++;
     }
-    list_it++;
   }
 }
 
@@ -159,7 +165,7 @@ to_string() {
 
 void
 Matrix::
-clr() {
+clear() {
   map_.clear();
 }
 
@@ -175,19 +181,19 @@ Matrix::
 add(const Matrix::Index& x, const Matrix::Index& y, const Matrix::Value& v) {
   Map<Matrix::K, Matrix::V, std::less<Matrix::K>>::IterBoolSetT it;
   it.first = map_.find(K(x,y));
-  if(it.first != map_.end()) {
-    std::cout << "add->key is found" << std::endl;
-    std::cout << map_.to_string() << std::endl;
+  if(it.first != map_.end() and (**it.first).clr_ == map_.getClr()) {
+   // std::cout << "add->key is found" << std::endl;
+   // std::cout << map_.to_string() << std::endl;
     (**it.first).val_.v_ += v;
     it.second = true;
-    std::cout << map_.to_string() << std::endl;
-    std::cout << "add->key is found" << std::endl;
+    //std::cout << map_.to_string() << std::endl;
+    //std::cout << "add->key is found" << std::endl;
   } else {
-    std::cout << "add->key is not found" << std::endl;
-    std::cout << map_.to_string() << std::endl;
+    //std::cout << "add->key is not found" << std::endl;
+    //std::cout << map_.to_string() << std::endl;
     it = map_.try_emplace(K(x,y),V(v));
-    std::cout << map_.to_string() << std::endl;
-    std::cout << "add->key is not found" << std::endl;
+    //std::cout << map_.to_string() << std::endl;
+    //std::cout << "add->key is not found" << std::endl;
   }
   return it;
 }

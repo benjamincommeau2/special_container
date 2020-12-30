@@ -68,10 +68,17 @@ struct T {
 
 int main() {
   Matrix mat;
-  std::vector<T> t = {T(1,1,1,1),T(1,2,3,4),T(2,2,6,4),T(2,1,-3,4),T(3,4,8,4),
-    T(4,3,5,-4),T(5,5,5,5)};
+  std::vector<T> t = {T(1,1,1,1),T(1,2,1,2),T(2,2,2,2),T(2,1,2,1),T(3,4,3,4),
+    T(4,3,4,3),T(5,5,5,5),T(1,6,1,6),T(2,4,2,4)};
   for(uint32_t i = 0; i< t.size(); i++) {
-    std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
+    //std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
+    mat.add(t[i].x,t[i].y,t[i].v);
+  }
+  mat.clear();
+  std::cout << "clear" << std::endl;
+  std::cout << mat.to_string() << std::endl;
+  for(uint32_t i = 0; i<= 6; i++) {
+    //std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
     mat.add(t[i].x,t[i].y,t[i].v);
   }
   std::cout << mat.to_string() << std::endl;
