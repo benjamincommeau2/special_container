@@ -91,6 +91,7 @@ class Map {
 
   SetT set_;
   ListT list_;
+  ListT list_temp_;
 
  private:
   Clr clr_ = 1;

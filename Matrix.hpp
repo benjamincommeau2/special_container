@@ -94,18 +94,32 @@ Explicit Methods
 void
 Matrix::
 ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
-  auto setA_begin = A.map_.set_.begin();
-  auto setA_end = A.map_.set_.begin();
-  auto setA = A.map_.set_.begin();
-  //Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::IterListT listA;
-  auto listA  = A.map_.list_.begin();
+  /*
+  if you use input const Matrix& A, then all iterators used by A must enforce
+  the inability to modify values in A
+  */
+  
+  // build indirect iterator to avoid constant de-qualification
+  Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::ListT temp_listA;
+  temp_listA.push_back(Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::T());
+  auto listA = temp_listA.begin();
 
-  auto setB_begin = B.map_.set_.begin();
-  auto setB_end = B.map_.set_.begin();
-  auto setB = B.map_.set_.begin();
-  auto listB = B.map_.list_.begin();
+  // build indirect iterator to avoid constant de-qualification
+  Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::ListT temp_listB;
+  temp_listB.push_back(Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::T());
+  auto listB = temp_listB.begin();
 
-  double value = 0;
+  auto setA_begin = A.map_.set_.cbegin();
+  auto setA_end = A.map_.set_.cbegin();
+  auto setA = A.map_.set_.cbegin();
+  //A.map_.setIterList(listA,Matrix::K(3,3));
+  //auto listA  = A.map_.list_.cbegin();
+
+  auto setB_begin = B.map_.set_.cbegin();
+  auto setB_end = B.map_.set_.cbegin();
+  auto setB = B.map_.set_.cbegin();
+
+  Matrix::Value value = 0;
   Index xA;
   Index xB;
   Index yA;
@@ -117,35 +131,32 @@ ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
     // get key
     xA = (**setA_end).key_.x_;
     // get lower bound
-    listA = A.map_.list_.begin();
-    A.map_.setIterList(listA,K(xA,0));
-    setA_begin = A.map_.set_.lower_bound()
+    listA->key_ = K(xA, 0);
+    setA_begin = A.map_.set_.lower_bound(listA);
     // get upper bound
-    listA = A.map_.list_.begin();
-    A.map_.setIterList(listA,K(xA,index_max_));
-    setA_end = A.map_.set_.upper_bound()
+    listA->key_ = K(xA, index_max_);
+    setA_end = A.map_.set_.upper_bound(listA);
     // initialize B
-    setB_begin = B.map_.set_.begin();
-    setB_end = B.map_.set_.begin();
-    setB = B.map_.set_.begin();
+    setB_begin = B.map_.set_.cbegin();
+    setB_end = B.map_.set_.cbegin();
+    setB = B.map_.set_.cbegin();
     // loop B
     while(setB != B.map_.set_.end()) {
       // get key
-      xB = (**setB_end).key_.x_
+      xB = (**setB_end).key_.x_;
       // get lower bound
-      listB = B.map_.list_.begin();
-      B.map_.setIterList(listB,K(xB,0));
-      setB_begin = B.map_.set_.lower_bound()
+      listB->key_ = K(xB, 0);
+      setB_end = B.map_.set_.upper_bound(listB);
+      setB_begin = B.map_.set_.lower_bound(listB);
       // get upper bound
-      listB = B.map_.list_.begin();
-      B.map_.setIterList(listB,K(xB,index_max_));
-      setB_end = B.map_.set_.upper_bound()
+      listB->key_ = K(xB, index_max_);
+      setB_end = B.map_.set_.upper_bound(listB);
       // loop
-      setB = setB_begin();
+      setB = setB_begin;
       value = 0;
-      while(setB != setB_end() and setA != setA_end()) {
-        yA = (**setA).key_.y_
-        yB = (**setB).key_.y_
+      while(setB != setB_end and setA != setA_end) {
+        yA = (**setA).key_.y_;
+        yB = (**setB).key_.y_;
         if(yA == yB) {
           value += (**setA).val_.v_ * (**setB).val_.v_;
         } else if(yA < yB) {
