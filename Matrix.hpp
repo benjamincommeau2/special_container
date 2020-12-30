@@ -78,16 +78,86 @@ class Matrix {
   Map<K,V>::IterBoolSetT
     add(const Index& x, const Index& y, const Value& v);
   void transpose();
+  void ABteC(const Matrix& A, const Matrix& B, Matrix& C);
 
 
  private:
   Map<K,V> map_;
   Map<Matrix::K,Matrix::V>::IterListT it_;
+  Index index_max_ = 0xFFFFFFFF;
 };
 
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+void
+Matrix::
+ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
+  auto setA_begin = A.map_.set_.begin();
+  auto setA_end = A.map_.set_.begin();
+  auto setA = A.map_.set_.begin();
+  //Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::IterListT listA;
+  auto listA  = A.map_.list_.begin();
+
+  auto setB_begin = B.map_.set_.begin();
+  auto setB_end = B.map_.set_.begin();
+  auto setB = B.map_.set_.begin();
+  auto listB = B.map_.list_.begin();
+
+  double value = 0;
+  Index xA;
+  Index xB;
+  Index yA;
+  Index yB;
+  C.clear();
+
+  // loop A
+  while(setA != A.map_.set_.end()) {
+    // get key
+    xA = (**setA_end).key_.x_;
+    // get lower bound
+    listA = A.map_.list_.begin();
+    A.map_.setIterList(listA,K(xA,0));
+    setA_begin = A.map_.set_.lower_bound()
+    // get upper bound
+    listA = A.map_.list_.begin();
+    A.map_.setIterList(listA,K(xA,index_max_));
+    setA_end = A.map_.set_.upper_bound()
+    // initialize B
+    setB_begin = B.map_.set_.begin();
+    setB_end = B.map_.set_.begin();
+    setB = B.map_.set_.begin();
+    // loop B
+    while(setB != B.map_.set_.end()) {
+      // get key
+      xB = (**setB_end).key_.x_
+      // get lower bound
+      listB = B.map_.list_.begin();
+      B.map_.setIterList(listB,K(xB,0));
+      setB_begin = B.map_.set_.lower_bound()
+      // get upper bound
+      listB = B.map_.list_.begin();
+      B.map_.setIterList(listB,K(xB,index_max_));
+      setB_end = B.map_.set_.upper_bound()
+      // loop
+      setB = setB_begin();
+      value = 0;
+      while(setB != setB_end() and setA != setA_end()) {
+        yA = (**setA).key_.y_
+        yB = (**setB).key_.y_
+        if(yA == yB) {
+          value += (**setA).val_.v_ * (**setB).val_.v_;
+        } else if(yA < yB) {
+          setA++;
+        } else {
+          setB++;
+        }
+      }
+      C.add(xA,xB,value);
+    }
+  }
+}
 
 void
 Matrix::
