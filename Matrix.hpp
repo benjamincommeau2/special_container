@@ -79,17 +79,38 @@ class Matrix {
     add(const Index& x, const Index& y, const Value& v);
   void transpose();
   void ABteC(const Matrix& A, const Matrix& B, Matrix& C);
+  Value getCoeff(const Matrix::Index& x, const Matrix::Index& y);
 
 
  private:
   Map<K,V> map_;
   Map<Matrix::K,Matrix::V>::IterListT it_;
   Index index_max_ = 0xFFFFFFFF;
+  Map<Matrix::K,Matrix::V>::IterListT list_it_;
+  Map<Matrix::K,Matrix::V>::IterSetT set_it_;
 };
 
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+Matrix::
+Value
+Matrix::
+getCoeff(const Matrix::Index& x, const Matrix::Index& y) {
+  list_it_ = map_.list_.begin();
+  map_.setIterList(list_it_, Matrix::K(x,y));
+  set_it_ = map_.set_.find(list_it_);
+  if(set_it_ != map_.set_.end()) {
+    if((**set_it_).clr_ == map_.getClr()) {
+      return (**set_it_).val_.v_;
+    } else {
+      return 0;
+    }
+  } else {
+    return 0;
+  }
+}
 
 void
 Matrix::

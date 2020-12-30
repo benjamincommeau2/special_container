@@ -148,5 +148,23 @@ int main() {
   std::cout << "C=" << std::endl;
   std::cout << C.to_string() << std::endl;
 
+  bool is_error = false;
+  for(uint32_t x = 0; x < 4; x++) {
+    for(uint32_t y = 0; y < 4; y++) {
+      if(std::abs(C.getCoeff(x,y)-Cn.getCoeff(x,y))>1.e-10) {
+        std::cout << "Error in testMatrix->ABteq->" 
+          << "( C.getCoeff(x,y) , Cn.getCoeff(x,y) )=" << std::endl;
+        std::cout << "( " << Matrix::V(C.getCoeff(x,y)).to_string() << " , "
+          << Matrix::V(Cn.getCoeff(x,y)).to_string() << " ) " << std::endl;
+        is_error=true;
+      }
+    }
+  }
+  if(is_error == false) {
+    std::cout << "Passed ABteC test." << std::endl; 
+  } else {
+    std::cout << "Failed ABteC test." << std::endl; 
+  }
+
   return 0;
 }
