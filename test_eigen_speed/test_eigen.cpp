@@ -118,6 +118,33 @@ void dealloc_sparse(Eigen::SparseMatrix<std::complex<double>>& m) {
   m.makeCompressed();
 }
 
+void eigen_oper_mult(const Eigen::SparseMatrix<std::complex<double>>& a,
+               const Eigen::SparseMatrix<std::complex<double>>& b,
+                     Eigen::SparseMatrix<std::complex<double>>& c) {
+  for (int k_a=0; k_a<a.outerSize(); ++k_a)
+    for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
+      it_a(a,k_a); it_a; ++it_a) {
+      for (int k_b=0; k_b<b.outerSize(); ++k_b)
+        for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
+          it_b(b,k_b); it_b; ++it_b) {
+          c.coeffRef(it_a.row()^it_b.row(), it_a.col()^it_b.col())
+            += it_a.value()*it_b.value();
+        }
+    }
+  //std::cout << c.nonZeros() << std::endl;
+}
+
+double compare_objects(Eigen::SparseMatrix<std::complex<double>>& c, Matrix& C) {
+  double v=0;
+  for (int k_c=0; k_c<c.outerSize(); ++k_c)
+    for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
+      it_c(c,k_c); it_c; ++it_c) {
+      v += std::abs(C.getCoeff(it_c.col(),it_c.row()) - it_c.value());
+    }
+  //print_sparse("b=",b);
+  //std::cout << 
+  return v;
+}
 
 void test_trad_mult() {
   Timer stop_watch;
@@ -131,8 +158,8 @@ void test_trad_mult() {
   Matrix B;
   Matrix C;
   TriVec tri_vec;
-  double exp = 1.6;
-  uint64_t max_qubits = 10;
+  double exp = 0.5;
+  uint64_t max_qubits = 13;
   uint64_t max_dim = 1<<max_qubits;
   uint64_t max_n = uint64_t(pow((max_dim),exp));
   try{
@@ -168,33 +195,39 @@ void test_trad_mult() {
     //////////////////////////////////////////
     stop_watch.start();
     c.resize(dim,dim); //set to zero as well
-    c.setZero();
     times_alloc.push_back(stop_watch.get_time());
     stop_watch.start();
-    c += a*b;
+    //c += a*b;
+    c.setZero();
+    eigen_oper_mult(a,b,c);
     times_mult.push_back(stop_watch.get_time());
     c_size.push_back(log2(double(c.nonZeros())/double(dim*dim)));
     a_size.push_back(log2(double(a.nonZeros())/double(dim*dim)));
     stop_watch.start();
-    c += a*b;
+    //c += a*b;
+    c.setZero();
+    eigen_oper_mult(a,b,c);
     times_mult_2.push_back(stop_watch.get_time());
     /////////////////////////////////////////////
     stop_watch.start();
     C.clear();
     times_allocM.push_back(stop_watch.get_time());
     stop_watch.start();
-    B.transpose();
-    C.ABteC(A,B,C);
+    //B.transpose();
+    //C.ABteC(A,B,C);
+    C.AoBeC(A,B,C);
     times_multM.push_back(stop_watch.get_time());
     stop_watch.start();
     C.clear();
-    C.ABteC(A,B,C);
+    //C.ABteC(A,B,C);
+    C.AoBeC(A,B,C);
     times_mult_2M.push_back(stop_watch.get_time());
     ////////////////////////////////////////////////
     printMEM();
+    std::cout << compare_objects(c,C) << std::endl;
   }
   
-  std::cout << std::fixed << std::setprecision(2)
+  std::cout << std::fixed << std::setprecision(3)
     << std::setw(6) << times_build[0] << " "
     << std::setw(6) << times_alloc[0] << " "
     << std::setw(6) << times_mult[0] << " "
@@ -207,7 +240,7 @@ void test_trad_mult() {
     << std::endl;
   std::cout << "----------------------------------------------" << std::endl;
   for (int i = 0; i < times_mult.size() - 1; i++) {
-    std::cout << std::fixed << std::setprecision(2)
+    std::cout << std::fixed << std::setprecision(3)
               << std::setw(6) << times_build[i+1] - times_build[i] << " "
               << std::setw(6) << times_alloc[i+1] - times_alloc[i] << " "
               << std::setw(6) << times_mult[i+1] - times_mult[i] << " "
@@ -221,7 +254,7 @@ void test_trad_mult() {
   }
   std::cout << "----------------------------------------------" << std::endl;
   auto end = times_alloc.size() - 1;
-  std::cout << std::fixed << std::setprecision(2)
+  std::cout << std::fixed << std::setprecision(3)
     << std::setw(6) << times_build[end] << " "
     << std::setw(6) << times_alloc[end] << " "
     << std::setw(6) << times_mult[end] << " "
@@ -235,21 +268,9 @@ void test_trad_mult() {
   //print_sparse("b=",b);
 }
 
+
+
 /*
-void oper_mult(const Eigen::SparseMatrix<std::complex<double>>& a,
-               const Eigen::SparseMatrix<std::complex<double>>& b,
-                     Eigen::SparseMatrix<std::complex<double>>& c) {
-  for (int k_a=0; k_a<a.outerSize(); ++k_a)
-    for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
-      it_a(a,k_a); it_a; ++it_a) {
-      for (int k_b=0; k_b<b.outerSize(); ++k_b)
-        for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
-          it_b(b,k_b); it_b; ++it_b) {
-          c.coeffRef(it_a.row()^it_b.row(), it_a.col()^it_b.col())
-            += it_a.value()*it_b.value();
-        }
-    }
-}
 
 
 void test_oper_mult() {

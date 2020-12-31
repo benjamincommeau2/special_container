@@ -80,6 +80,7 @@ class Matrix {
   void transpose();
   void ABteC(const Matrix& A, const Matrix& B, Matrix& C);
   Value getCoeff(const Matrix::Index& x, const Matrix::Index& y);
+  void AoBeC(Matrix& A, Matrix& B, Matrix& C);
 
 
  private:
@@ -93,6 +94,44 @@ class Matrix {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+void
+Matrix::
+AoBeC(Matrix& A, Matrix& B, Matrix& C) {
+
+  auto listA_begin = A.map_.list_.begin();
+  listA_begin++;
+  auto listA = listA_begin;
+
+  auto listB_begin = B.map_.list_.begin();
+  listB_begin++;
+  auto listB = listB_begin;
+
+  Index xA;
+  Index yA;
+  Value vA;
+
+  Index xB;
+  Index yB;
+  Value vB;
+
+  C.clear();
+
+  while(listA != A.map_.list_.end() and listA->clr_ == A.map_.getClr()) {
+    xA = listA->key_.x_;
+    yA = listA->key_.y_;
+    vA = listA->val_.v_;
+    listB = listB_begin;
+    while(listB != B.map_.list_.end() and listB->clr_ == B.map_.getClr()) {
+      xB = listB->key_.x_;
+      yB = listB->key_.y_;
+      vB = listB->val_.v_;
+      C.add(xA^xB,yA^yB,vA*vB);
+      listB++;
+    }
+    listA++;
+  }
+}
 
 Matrix::
 Value
