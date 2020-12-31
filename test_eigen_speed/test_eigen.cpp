@@ -12,6 +12,7 @@
 #include <exception>
 #include <iterator>
 #include <stdexcept>
+#include "../Matrix.hpp"
 
 class Timer {
  private:
@@ -44,16 +45,18 @@ class Timer {
 typedef Eigen::Triplet<std::complex<double>> Tri;  
 typedef std::vector<Tri> TriVec;
 
+void printMEM() {
+  auto sys = system("ps -eo cmd,%mem,%cpu --sort=-%mem | head -n 2 | tail -n 1");
+}
+
 void
 build_sparse(const uint64_t& dim, const uint64_t& n, TriVec& tri_vec,
   std::default_random_engine& rand_gen, 
   std::uniform_real_distribution<double>& urd,
-Eigen::SparseMatrix<std::complex<double>>& m) {
+  Eigen::SparseMatrix<std::complex<double>>& m,
+Matrix& M) {
   int sys;
   tri_vec.resize(0);
-  sys = system("ps -eo cmd,%mem,%cpu --sort=-%mem | head -n 2");
-  std::cout << dim*dim << " " << tri_vec.size()<<  " "
-    << tri_vec.capacity() << std::endl;
   try {
     tri_vec.resize(dim*dim);
   } catch(const std::exception& e) {
@@ -63,26 +66,18 @@ Eigen::SparseMatrix<std::complex<double>>& m) {
     std::cerr << e.what() << std::endl;
     throw;
   }
-  sys = system("ps -eo cmd,%mem,%cpu --sort=-%mem | head -n 2");
-  std::cout << dim*dim << " " << tri_vec.size()<<  " "
-    << tri_vec.capacity() << std::endl;
   std::complex<double> v;
   uint64_t i = 0;
-  std::cout << "start building list" << std::endl;
   for (uint64_t row = 0; row < dim; row++) {
     for (uint64_t col = 0; col < dim; col++) {
-      //std::cout << i << std::endl;
       v = std::complex<double>(urd(rand_gen), urd(rand_gen));
       tri_vec[i]=(Tri(row,col,v));
       i++;
     }
   }
-  sys = system("ps -eo cmd,%mem,%cpu --sort=-%mem | head -n 2");
-  std::cout << dim*dim << " " << tri_vec.size()<<  " "
-    << tri_vec.capacity() << std::endl;
-  std::cout << "finished building vec" << std::endl;
-  std::shuffle(tri_vec.begin(), tri_vec.end(), rand_gen);
-  std::cout << "finished shuffling vec" << std::endl;
+  auto it = tri_vec.begin();
+  std::advance(it,dim*dim);
+  std::shuffle(tri_vec.begin(), it, rand_gen);
   try {
   m.resize(dim,dim);
   } catch(std::exception& e) {
@@ -90,11 +85,13 @@ Eigen::SparseMatrix<std::complex<double>>& m) {
     std::cout << "build_sparse->m.resize(dim,dim);" << std::endl;
     throw;
   }
-  auto it = tri_vec.begin();
+  it = tri_vec.begin();
   std::advance(it,n);
-  std::cout << "finished matrix resize" << std::endl;
   m.setFromTriplets(tri_vec.begin(), it);
-  std::cout << "finished setFromTriplets" << std::endl;
+  M.clear();
+  for(uint32_t i = 0; i < n; i++) {
+    M.add(tri_vec[i].col(),tri_vec[i].row(),tri_vec[i].value());
+  }
 }
 
 void print_sparse(const std::string& s,
@@ -130,71 +127,84 @@ void test_trad_mult() {
   Eigen::SparseMatrix<std::complex<double>> a;
   Eigen::SparseMatrix<std::complex<double>> b;
   Eigen::SparseMatrix<std::complex<double>> c;
+  Matrix A;
+  Matrix B;
+  Matrix C;
   TriVec tri_vec;
-  double exp = 1.5;
-  uint64_t max_qubits = 12;
+  double exp = 1.6;
+  uint64_t max_qubits = 10;
   uint64_t max_dim = 1<<max_qubits;
   uint64_t max_n = uint64_t(pow((max_dim),exp));
-  //uint64_t max_n = uint64_t(pow(max_dim,2));
-  std::cout << "start reserving" << std::endl;
   try{
     a.reserve(max_n);
     b.reserve(max_n);
     c.reserve(max_dim*max_dim);
-    //tri_vec.reserve(max_dim*max_dim+1);
-    tri_vec = TriVec(max_dim*max_dim+1);
-    std::cout << tri_vec.size() << " " << tri_vec.capacity() << std::endl;
+    tri_vec = TriVec(max_dim*max_dim);
     tri_vec.resize(tri_vec.capacity());
-    std::cout << tri_vec.size() << " " << tri_vec.capacity() << std::endl;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     throw;
   }
-  std::cout << "finished reserving" << std::endl;
   std::vector<double> times_mult;
   std::vector<double> times_mult_2;
   std::vector<double> times_alloc;
   std::vector<double> times_build;
   std::vector<double> a_size;
   std::vector<double> c_size;
+  std::vector<double> times_allocM;
+  std::vector<double> times_multM;
+  std::vector<double> times_mult_2M;
   uint64_t dim;
   uint64_t n;
-  int sys;
   for(uint64_t q = 1; q <= (max_qubits); q++ ) {
     dim = (1<<q);
     n = uint64_t(pow((dim),exp));
     std::cout << "q=" << q << " dim=" << dim << " n=" << n << " dim^2="
       << dim*dim << std::endl;
     stop_watch.start();
-    build_sparse(dim,n, tri_vec, rand_gen, urd, a);
-    build_sparse(dim,n, tri_vec, rand_gen, urd, b);
+    build_sparse(dim,n, tri_vec, rand_gen, urd, a, A);
+    build_sparse(dim,n, tri_vec, rand_gen, urd, b, B);
     times_build.push_back(stop_watch.get_time());
-    std::cout << "finished building" << std::endl;
-    //c = build_sparse(s, rand_gen, urd);
-    //dealloc_sparse(c);
+    //////////////////////////////////////////
     stop_watch.start();
     c.resize(dim,dim); //set to zero as well
-    std::cout << "resize" << std::endl;
     c.setZero();
     times_alloc.push_back(stop_watch.get_time());
-    std::cout << "setZero" << std::endl;
     stop_watch.start();
     c += a*b;
     times_mult.push_back(stop_watch.get_time());
     c_size.push_back(log2(double(c.nonZeros())/double(dim*dim)));
     a_size.push_back(log2(double(a.nonZeros())/double(dim*dim)));
-    std::cout << "first mult" << std::endl;
     stop_watch.start();
     c += a*b;
     times_mult_2.push_back(stop_watch.get_time());
-    std::cout << "second mult" << std::endl;
+    /////////////////////////////////////////////
+    stop_watch.start();
+    C.clear();
+    times_allocM.push_back(stop_watch.get_time());
+    stop_watch.start();
+    B.transpose();
+    C.ABteC(A,B,C);
+    times_multM.push_back(stop_watch.get_time());
+    stop_watch.start();
+    C.clear();
+    C.ABteC(A,B,C);
+    times_mult_2M.push_back(stop_watch.get_time());
+    ////////////////////////////////////////////////
+    printMEM();
   }
   
   std::cout << std::fixed << std::setprecision(2)
     << std::setw(6) << times_build[0] << " "
     << std::setw(6) << times_alloc[0] << " "
     << std::setw(6) << times_mult[0] << " "
-    << std::setw(6) << times_mult_2[0] << std::endl;
+    << std::setw(6) << times_mult_2[0] << " "
+    << std::setw(6) << " "
+    << std::setw(6) << " "
+    << std::setw(6) << times_allocM[0] << " "
+    << std::setw(6) << times_multM[0] << " "
+    << std::setw(6) << times_mult_2M[0] << " "
+    << std::endl;
   std::cout << "----------------------------------------------" << std::endl;
   for (int i = 0; i < times_mult.size() - 1; i++) {
     std::cout << std::fixed << std::setprecision(2)
@@ -204,6 +214,9 @@ void test_trad_mult() {
               << std::setw(6) << times_mult_2[i+1] - times_mult_2[i] << " "
               << std::setw(6) << a_size[i] << " "
               << std::setw(6) << c_size[i] << " "
+              << std::setw(6) << times_allocM[i+1]-times_allocM[i] << " "
+              << std::setw(6) << times_multM[i+1]-times_multM[i] << " "
+              << std::setw(6) << times_mult_2M[i+1]-times_mult_2M[i] << " "
               << std::endl;
   }
   std::cout << "----------------------------------------------" << std::endl;
@@ -215,6 +228,9 @@ void test_trad_mult() {
     << std::setw(6) << times_mult_2[end] << " "
     << std::setw(6) << a_size[end] << " "
     << std::setw(6) << c_size[end] << " "
+    << std::setw(6) << times_allocM[end] << " "
+    << std::setw(6) << times_multM[end] << " "
+    << std::setw(6) << times_mult_2M[end] << " "
     << std::endl;
   //print_sparse("b=",b);
 }

@@ -126,7 +126,6 @@ ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
   temp_listB.push_back(Map<Matrix::K,Matrix::V,std::less<Matrix::K>>::T());
   auto listB = temp_listB.begin();
 
-  std::cout << "here0" << std::endl;
 
   auto setA_begin = A.map_.set_.cbegin();
   auto setA_end = A.map_.set_.cbegin();
@@ -136,7 +135,6 @@ ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
   auto setB_end = B.map_.set_.cbegin();
   auto setB = B.map_.set_.cbegin();
 
-  std::cout << "here1" << std::endl;
 
   Matrix::Value value = 0;
   Index xA;
@@ -145,25 +143,20 @@ ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
   Index yB;
   C.clear();
 
-  std::cout << "here2" << std::endl;
   // loop A
   while(setA_end != A.map_.set_.end()) {
     // get key
     xA = (**setA_end).key_.x_;
-    std::cout << "here3" << std::endl;
     // get lower bound
     listA->key_ = K(xA, 0);
     setA_begin = A.map_.set_.lower_bound(listA);
-    std::cout << "here4" << std::endl;
     // get upper bound
     listA->key_ = K(xA, index_max_);
     setA_end = A.map_.set_.upper_bound(listA);
-    std::cout << "here5" << std::endl;
     // initialize B
     setB_begin = B.map_.set_.cbegin();
     setB_end = B.map_.set_.cbegin();
     setB = B.map_.set_.cbegin();
-    std::cout << "here6" << std::endl;
     // loop A
     while(setB_end != B.map_.set_.end()) {
       setA = setA_begin;
@@ -192,45 +185,7 @@ ABteC(const Matrix& A, const Matrix& B, Matrix& C) {
         }
       }
       C.add(xA,xB,value);
-      if(setB_begin != B.map_.set_.end()) {
-        std::cout << "(**setB_begin).key_=" << (**setB_begin).key_.to_string()
-          << std::endl;
-      } else {
-        std::cout << "(**setB_begin).key_=B.map_.set_.end()" << std::endl;
-      }
-      if(setB != B.map_.set_.end()) {
-        std::cout << "(**setB).key_=" << (**setB).key_.to_string()
-          << std::endl;
-      } else {
-        std::cout << "(**setB).key_=B.map_.set_.end()" << std::endl;
-      }
-      if(setB_end != B.map_.set_.end()) {
-        std::cout << "(**setB_end).key_=" << (**setB_end).key_.to_string()
-          << std::endl;
-      } else {
-        std::cout << "(**setB_end).key_=B.map_.set_.end()" << std::endl;
-      }
     }
-    std::cout << std::endl;
-    if(setA_begin != A.map_.set_.end()) {
-      std::cout << "(**setA_begin).key_=" << (**setA_begin).key_.to_string()
-        << std::endl;
-    } else {
-      std::cout << "(**setA_begin).key_=A.map_.set_.end()" << std::endl;
-    }
-    if(setA != A.map_.set_.end()) {
-      std::cout << "(**setA).key_=" << (**setA).key_.to_string()
-        << std::endl;
-    } else {
-      std::cout << "(**setA).key_=A.map_.set_.end()" << std::endl;
-    }
-    if(setA_end != A.map_.set_.end()) {
-      std::cout << "(**setA_end).key_=" << (**setA_end).key_.to_string()
-        << std::endl;
-    } else {
-      std::cout << "(**setA_end).key_=A.map_.set_.end()" << std::endl;
-    }
-    std::cout << std::endl;
   }
 }
 

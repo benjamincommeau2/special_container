@@ -1,3 +1,4 @@
+clear
 opt="O1" # allows performance timing loops
 opt="O3" # removes performance timing loops, compliant high optimization
 script=test_eigen
