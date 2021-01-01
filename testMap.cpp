@@ -176,7 +176,7 @@ void quick_print_test() {
   std::cout << tmap.to_string() << std::endl;
 }
 
-int main() {
+void test_try_emplace() {
   struct K {
     int x; int y;
     K() {};
@@ -219,5 +219,9 @@ int main() {
     map.try_emplace(input[i].k,input[i].v);
   }
   std::cout << map.to_string() << std::endl;
+}
+
+int main() {
+  test_try_emplace();
   return 0;
 }

@@ -68,6 +68,29 @@ class Map {
   typedef std::pair<IterSetT,bool> IterBoolSetT;
 
   /* //////////////////////////////////////////////////////////////
+  Iterators
+  */ //////////////////////////////////////////////////////////////
+  struct ListIterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+    ListIterator(pointer ptr) : m_ptr(ptr) {}
+   private:
+    pointer m_ptr;
+    reference operator*() const { return *m_ptr; }
+    pointer operator->() { return m_ptr; }
+    ListIterator& operator++() { m_ptr++; return *this; }
+    ListIterator operator++(T)
+      { ListIterator tmp = *this; ++(*this); return tmp; }
+    friend bool operator== (const ListIterator& a, const ListIterator& b)
+      { return a.m_ptr == b.m_ptr; };
+    friend bool operator!= (const ListIterator& a, const ListIterator& b)
+      { return a.m_ptr != b.m_ptr; };
+  };
+
+  /* //////////////////////////////////////////////////////////////
   Methods
   */ //////////////////////////////////////////////////////////////
 
@@ -91,11 +114,12 @@ class Map {
 
   SetT set_;
   ListT list_;
-  ListT list_temp_;
+  mutable ListT list_temp_ = {T()};
+  mutable IterListT list_temp_it_ = list_temp_.begin();
 
  private:
   Clr clr_ = 1;
-  Clr clr_max_ = 0xFFFFFFFFFFFFFFFF;
+  Clr clr_max_ = UINT64_MAX; //0xFFFFFFFFFFFFFFFF;
   IterBoolSetT iter_bool_set_;
   //IterListT iter_list_ = list_.begin();
   //IterListT iter_list_clr_end_ = list_.end();
