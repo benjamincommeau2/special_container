@@ -74,16 +74,21 @@ class Map {
     using iterator_category = std::bidirectional_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = T;
-    using pointer = T*;
+    using pointer = IterListT;
     using reference = T&;
-    ListIterator(pointer ptr) : m_ptr(ptr) {}
-   private:
-    pointer m_ptr;
+    ListIterator(const IterListT& ptr) {
+      m_ptr = ptr;
+    }
+   //private:
+    IterListT m_ptr;
     reference operator*() const { return *m_ptr; }
     pointer operator->() { return m_ptr; }
     ListIterator& operator++() { m_ptr++; return *this; }
-    ListIterator operator++(T)
-      { ListIterator tmp = *this; ++(*this); return tmp; }
+    ListIterator& operator--() { m_ptr--; return *this; }
+    ListIterator operator++(int)
+      { ListIterator tmp = *this; ++(*this); return tmp;}
+    ListIterator operator--(int)
+      { ListIterator tmp = *this; --(*this); return tmp;}
     friend bool operator== (const ListIterator& a, const ListIterator& b)
       { return a.m_ptr == b.m_ptr; };
     friend bool operator!= (const ListIterator& a, const ListIterator& b)
@@ -107,6 +112,8 @@ class Map {
   IterSetT find(const Key& key);
   void flatten_clear();
   void moveToFront(IterListT& it);
+  ListIterator list_begin();
+  ListIterator list_end();
 
   /* //////////////////////////////////////////////////////////////
   Public Variables
@@ -131,6 +138,22 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+ListIterator
+Map<Key, Val, Compare>::
+list_begin() {
+  return ListIterator(list_begin_);
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+ListIterator
+Map<Key, Val, Compare>::
+list_end() {
+  return ListIterator(list_.end());
+}
 
 template<class Key, class Val, class Compare>
 void

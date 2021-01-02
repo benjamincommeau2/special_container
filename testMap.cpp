@@ -222,6 +222,64 @@ void test_try_emplace() {
 }
 
 int main() {
-  test_try_emplace();
+  struct K {
+    int x; int y;
+    K() {};
+    K(const int& x_, const int& y_) { x = x_; y = y_; }
+    bool operator <(const K& rhs) const {
+      return x != rhs.x ? x < rhs.x : y < rhs.y;
+    }
+    std::string to_string() {
+      std::string tmp = "";
+      tmp += "(";
+      tmp += std::to_string(x);
+      tmp += ",";
+      tmp += std::to_string(y);
+      tmp += ")";
+      return tmp;
+    }
+  };
+  struct V {
+    std::complex<double> v;
+    V() {}
+    V(const std::complex<double>& v_) {v = v_;}
+    V(const double& r_, const double& i_) {v = std::complex<double>(r_, i_);}
+    std::string to_string() {
+      return "(" + std::to_string(v.real()) + " "
+      + std::to_string(v.imag()) + ")";
+    }
+  };
+  struct T {
+    K k; V v;
+    T() {}
+    T(const K& k_, const V& v_) { k = k_; v = v_; }
+    T(const int& x_, const int& y_, const double& r_, const double& i_) {
+      k = K(x_, y_); v = V(r_, i_);
+    }
+  };
+  Map<K, V> map;
+  std::vector<T> input = {T(1,2,1,2),T(3,3,3,3),T(7,3,7,3),T(2,7,2,7)};
+  for (int i = 0; i < input.size(); i++) {
+    map.try_emplace(input[i].k,input[i].v);
+  }
+  std::cout << map.to_string() << std::endl;
+  Map<K,V>::ListIterator it = map.list_begin(); 
+  int h = 0;
+  while(it != map.list_end()) {
+    std::cout << it->key_.to_string() << " " << it->val_.to_string() << std::endl;
+    if(h%2==0) {it++;} else {++it;}
+    h++;
+  }
+  std::cout << std::endl;
+  h = 0;
+  it = map.list_end();
+  it--;
+  while(true) {
+    std::cout << it->key_.to_string() << " " << it->val_.to_string() << std::endl;
+    if (it == map.list_begin()) {break;}
+    if(h%2==1) {it--;} else {--it;}
+    h++;
+  }
+
   return 0;
 }

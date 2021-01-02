@@ -86,7 +86,7 @@ class Matrix {
  private:
   Map<K,V> map_;
   Map<Matrix::K,Matrix::V>::IterListT it_;
-  Index index_max_ = 0xFFFFFFFF;
+  Index index_max_ = UINT32_MAX;
   Map<Matrix::K,Matrix::V>::IterListT list_it_;
   Map<Matrix::K,Matrix::V>::IterSetT set_it_;
 };
