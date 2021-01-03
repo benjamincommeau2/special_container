@@ -95,6 +95,31 @@ class Map {
       { return a.m_ptr != b.m_ptr; };
   };
 
+  struct MapIterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = IterListT;
+    using reference = T&;
+    MapIterator(const IterSetT& ptr) {
+      m_ptr = ptr;
+    }
+   //private:
+    IterSetT m_ptr;
+    reference operator*() const { return **m_ptr; }
+    pointer operator->() { return *m_ptr; }
+    MapIterator& operator++() { m_ptr++; return *this; }
+    MapIterator& operator--() { m_ptr--; return *this; }
+    MapIterator operator++(int)
+      { MapIterator tmp = *this; ++(*this); return tmp;}
+    MapIterator operator--(int)
+      { MapIterator tmp = *this; --(*this); return tmp;}
+    friend bool operator== (const MapIterator& a, const MapIterator& b)
+      { return a.m_ptr == b.m_ptr; };
+    friend bool operator!= (const MapIterator& a, const MapIterator& b)
+      { return a.m_ptr != b.m_ptr; };
+  };
+
   /* //////////////////////////////////////////////////////////////
   Methods
   */ //////////////////////////////////////////////////////////////
@@ -114,6 +139,8 @@ class Map {
   void moveToFront(IterListT& it);
   ListIterator list_begin();
   ListIterator list_end();
+  MapIterator map_begin();
+  MapIterator map_end();
 
   /* //////////////////////////////////////////////////////////////
   Public Variables
@@ -138,6 +165,22 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+MapIterator
+Map<Key, Val, Compare>::
+map_begin() {
+  return MapIterator(set_.begin());
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+MapIterator
+Map<Key, Val, Compare>::
+map_end() {
+  return MapIterator(set_.end());
+}
 
 template<class Key, class Val, class Compare>
 Map<Key, Val, Compare>::

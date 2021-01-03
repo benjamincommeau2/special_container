@@ -280,6 +280,15 @@ int main() {
     if(h%2==1) {it--;} else {--it;}
     h++;
   }
+  std::cout << std::endl;
+  auto itm = map.map_begin();
+  h = 0;
+  while(itm != map.map_end()) {
+    std::cout << itm->key_.to_string() << " " << itm->val_.to_string()
+      << std::endl;
+    if(h%2==1) {itm++;} else {++itm;}
+    h++;
+  }
 
   return 0;
 }
