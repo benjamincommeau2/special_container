@@ -83,11 +83,11 @@ void test_transpose() {
   }
   std::cout << mat.to_string() << std::endl;
   std::cout << "start transpose" << std::endl;
-  mat.transpose();
+  mat.transpose2();
   std::cout << mat.to_string() << std::endl;
 }
 
-int main() {
+void test_ABteC() {
   Matrix A;
   std::vector<T> tA = {
   T(0, 0,        0.9031785237401092,0),
@@ -166,5 +166,9 @@ int main() {
     std::cout << "Failed ABteC test." << std::endl; 
   }
 
+}
+
+int main() {
+  test_transpose();
   return 0;
 }

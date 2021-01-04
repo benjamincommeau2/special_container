@@ -91,8 +91,12 @@ class Map {
       { ListIterator tmp = *this; --(*this); return tmp;}
     friend bool operator== (const ListIterator& a, const ListIterator& b)
       { return a.m_ptr == b.m_ptr; };
+    friend bool operator== (const Map::MapIterator& a, const ListIterator& b)
+      { return *a.m_ptr == b.m_ptr; };
     friend bool operator!= (const ListIterator& a, const ListIterator& b)
       { return a.m_ptr != b.m_ptr; };
+    friend bool operator!= (const Map::MapIterator& a, const ListIterator& b)
+      { return *a.m_ptr != b.m_ptr; };
   };
 
   struct MapIterator {
@@ -116,8 +120,12 @@ class Map {
       { MapIterator tmp = *this; --(*this); return tmp;}
     friend bool operator== (const MapIterator& a, const MapIterator& b)
       { return a.m_ptr == b.m_ptr; };
+    friend bool operator== (const ListIterator& a, const MapIterator& b)
+      { return a.m_ptr == *b.m_ptr; };
     friend bool operator!= (const MapIterator& a, const MapIterator& b)
       { return a.m_ptr != b.m_ptr; };
+    friend bool operator!= (const ListIterator& a, const MapIterator& b)
+      { return a.m_ptr != *b.m_ptr; };
   };
 
   /* //////////////////////////////////////////////////////////////
@@ -144,6 +152,10 @@ class Map {
   MapIterator map_lower_bound(const Key& key);
   MapIterator map_upper_bound(const Key& key);
   MapIterator map_find(const Key& key);
+  void reInsertKey(MapIterator& it, const Key& key);
+  void reInsertKey(MapIterator& it0, const Key& key0,
+    MapIterator& it1, const Key& key1);
+  void move2Front(MapIterator& it);
 
   /* //////////////////////////////////////////////////////////////
   Public Variables
@@ -168,6 +180,40 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+move2Front(MapIterator& it) {
+  list_.splice(list_begin_, list_, *it.m_ptr);
+  list_begin_ = *it.m_ptr;
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+reInsertKey(MapIterator& it0, const Key& key0,
+  MapIterator& it1, const Key& key1) {
+  auto nh0 = set_.extract(it0.m_ptr);
+  auto nh1 = set_.extract(it1.m_ptr);
+  (*nh0.value()).key_ = key0;
+  (*nh1.value()).key_ = key1;
+  set_.insert(std::move(nh0));
+  set_.insert(std::move(nh1));
+  it0 = map_find(key0);
+  it1 = map_find(key1);
+}
+
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+reInsertKey(MapIterator& it, const Key& key) {
+  auto nh = set_.extract(it.m_ptr);
+  (*nh.value()).key_ = key;
+  set_.insert(std::move(nh));
+  it = map_find(key);
+}
 
 template<class Key, class Val, class Compare>
 Map<Key, Val, Compare>::

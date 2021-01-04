@@ -81,6 +81,7 @@ class Matrix {
   void ABteC(const Matrix& A, const Matrix& B, Matrix& C);
   Value getCoeff(const Matrix::Index& x, const Matrix::Index& y);
   void AoBeC(Matrix& A, Matrix& B, Matrix& C);
+  void transpose2();
 
 
  private:
@@ -94,6 +95,42 @@ class Matrix {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+void
+Matrix::
+transpose2() {
+  if (map_.getClr() == map_.getClrMax()) { map_.flatten_clear(); }
+  auto list_it = map_.list_begin();
+  auto map_it_trans = map_.map_begin();
+  auto map_it = map_.map_begin();
+  Index x; Index y;
+  while(list_it != map_.list_end() and list_it->clr_ == map_.getClr()) {
+    x = list_it->key_.x_;
+    y = list_it->key_.y_;
+    if(x == y) {
+      list_it->clr_ = map_.getClr()+1;
+      list_it++;
+    } else {
+      list_it++;
+      map_it_trans = map_.map_find(K(y,x));
+      map_it = map_.map_find(K(x,y));
+      if(map_it_trans != map_.map_end()) {
+        // std::cout << "Transposed Key exists" << std::endl;
+        if(map_it_trans == list_it) {list_it++;}
+        map_.reInsertKey(map_it, K(y,x) , map_it_trans, K(x,y));
+        map_it->clr_ = map_.getClr()+1;
+        map_it_trans->clr_ = map_.getClr()+1;
+        map_.move2Front(map_it);
+        map_.move2Front(map_it_trans);
+      } else {
+        // std::cout << "Transposed Key does not exists" << std::endl;
+        map_.reInsertKey(map_it, K(y,x));
+        map_it->clr_ = map_.getClr()+1;
+        map_.move2Front(map_it);
+      }
+    }
+  }
+}
 
 void
 Matrix::
