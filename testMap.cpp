@@ -262,7 +262,9 @@ int main() {
   for (int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
   }
+  std::cout << "print map" << std::endl;
   std::cout << map.to_string() << std::endl;
+  std::cout << "test list iterator forward" << std::endl;
   Map<K,V>::ListIterator it = map.list_begin(); 
   int h = 0;
   while(it != map.list_end()) {
@@ -271,6 +273,7 @@ int main() {
     h++;
   }
   std::cout << std::endl;
+  std::cout << "test list iterator reverse" << std::endl;
   h = 0;
   it = map.list_end();
   it--;
@@ -281,6 +284,7 @@ int main() {
     h++;
   }
   std::cout << std::endl;
+  std::cout << "test map map iterator" << std::endl;
   auto itm = map.map_begin();
   h = 0;
   while(itm != map.map_end()) {
@@ -291,6 +295,7 @@ int main() {
   }
   //std::vector<T> input = {T(1,2,1,2),T(3,3,3,3),T(7,3,7,3),T(2,7,2,7)};
   std::cout << std::endl;
+  std::cout << "test map lower and upper bound" << std::endl;
   auto it_begin = map.map_lower_bound(K(1,3));
   auto it_end = map.map_upper_bound(K(3,4));
   itm = it_begin;
@@ -301,5 +306,10 @@ int main() {
     if(h%2==1) {itm++;} else {++itm;}
     h++;
   }
+  std::cout << std::endl;
+  std::cout << "test map find" << std::endl;
+  auto it_find = map.map_find(K(3,3));
+  std::cout << it_find->key_.to_string() << " " << it_find->val_.to_string()
+    << std::endl;
   return 0;
 }

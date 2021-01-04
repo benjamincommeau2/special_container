@@ -143,6 +143,7 @@ class Map {
   MapIterator map_end();
   MapIterator map_lower_bound(const Key& key);
   MapIterator map_upper_bound(const Key& key);
+  MapIterator map_find(const Key& key);
 
   /* //////////////////////////////////////////////////////////////
   Public Variables
@@ -167,6 +168,15 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+MapIterator
+Map<Key, Val, Compare>::
+map_find(const Key& key) {
+  (*list_temp_it_).key_ = key;
+  return MapIterator(set_.find(list_temp_it_));
+}
 
 template<class Key, class Val, class Compare>
 Map<Key, Val, Compare>::
