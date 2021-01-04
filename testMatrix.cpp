@@ -85,6 +85,7 @@ void test_transpose() {
   std::cout << "start transpose" << std::endl;
   mat.transpose2();
   std::cout << mat.to_string() << std::endl;
+  std::cout << "mat.getClr()=" << mat.getClr() << std::endl;
 }
 
 void test_ABteC() {

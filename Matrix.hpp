@@ -82,6 +82,14 @@ class Matrix {
   Value getCoeff(const Matrix::Index& x, const Matrix::Index& y);
   void AoBeC(Matrix& A, Matrix& B, Matrix& C);
   void transpose2();
+  Map<K,V>::Clr getClr();
+  void addScaleMatrixMultTrans(const Value& v, const Matrix& A, const Matrix& B);
+  Map<Matrix::K,Matrix::V>::MapIterator map_begin();
+  Map<Matrix::K,Matrix::V>::MapIterator map_end();
+  Map<Matrix::K,Matrix::V>::ConstMapIterator map_cbegin() const;
+  Map<Matrix::K,Matrix::V>::ConstMapIterator map_cend() const;
+  Map<Matrix::K,Matrix::V>::MapIterator map_lower_bound(const K& k);
+  Map<Matrix::K,Matrix::V>::MapIterator map_upper_bound(const K& k);
 
 
  private:
@@ -95,6 +103,92 @@ class Matrix {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+Map<Matrix::K,Matrix::V>::ConstMapIterator
+Matrix::
+map_cbegin() const {
+  return map_.map_cbegin();
+}
+
+Map<Matrix::K,Matrix::V>::ConstMapIterator
+Matrix::
+map_cend() const {
+  return map_.map_cend();
+}
+
+Map<Matrix::K,Matrix::V>::MapIterator
+Matrix::
+map_begin() {
+  return map_.map_begin();
+}
+
+Map<Matrix::K,Matrix::V>::MapIterator
+Matrix::
+map_end() {
+  return map_.map_end();
+}
+
+Map<Matrix::K,Matrix::V>::MapIterator
+Matrix::
+map_lower_bound(const K& k) {
+  return map_.map_lower_bound(k);
+}
+
+Map<Matrix::K,Matrix::V>::MapIterator
+Matrix::
+map_upper_bound(const K& k) {
+  return map_.map_upper_bound(k);
+}
+
+void
+Matrix::
+addScaleMatrixMultTrans(const Matrix::Value& s, const Matrix& A,
+  const Matrix& B) {
+  // C = A@Bt
+  auto a_lower = A.map_cbegin();
+  auto a = A.map_cbegin();
+  auto a_upper = A.map_cbegin();
+  Index a_x;
+  Index a_y;
+
+  auto b_lower = B.map_cbegin();
+  auto b = B.map_cbegin();
+  auto b_upper = B.map_cbegin();
+  Index b_x;
+  Index b_y;
+
+  Value v;
+  while(a != A.map_end()) {
+    a_x = a_upper->key_.x_;
+    a_lower = A.map_lower_bound(K(a_x,0))
+    a_upper = A.map_upper_bound(K(a_x,index_max_))
+    while(b != B.map_cend()) {
+      b_x = b_upper->key_.x_;
+      b_lower = B.map_lower_bound(K(b_x,b_y));
+      b_upper = B.map_upper_bound(K(b_x,b_y));
+      v = 0;
+      while(a != a_upper and b != b_upper) {
+        a_y = a->key_.y_;
+        b_y = b->key_.y_;
+        if(ay == by) {
+          v += a->val_ * b->val_;
+          a++; b++;
+        } else if(ay < by) {
+          a++;
+        } else {
+          b++;
+        }
+      }
+      add(a_x^b_x, a_y^b_y, s*v);
+    }
+  }
+}
+
+Map<Matrix::K,Matrix::V>::Clr
+Matrix::
+getClr() {
+  return map_.getClr();
+}
 
 void
 Matrix::
@@ -130,6 +224,7 @@ transpose2() {
       }
     }
   }
+  map_.setClr(map_.getClr()+1);
 }
 
 void
@@ -331,6 +426,7 @@ transpose() {
       list_it++;
     }
   }
+  map_.setClr(map_.getClr()+1);
 }
 
 std::string

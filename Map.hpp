@@ -99,6 +99,71 @@ class Map {
       { return *a.m_ptr != b.m_ptr; };
   };
 
+  struct ConstListIterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = IterListT;
+    using reference = T&;
+    ConstListIterator(const IterListT& ptr) {
+      m_ptr = ptr;
+    }
+   //private:
+    IterListT m_ptr;
+    void operator= (const Map::MapIterator& rhs) {
+      m_ptr = rhs.m_ptr;
+    }
+    const reference operator*() const { return *m_ptr; }
+    const pointer operator->() { return m_ptr; }
+    ConstListIterator& operator++() { m_ptr++; return *this; }
+    ConstListIterator& operator--() { m_ptr--; return *this; }
+    ConstListIterator operator++(int)
+      { ListIterator tmp = *this; ++(*this); return tmp;}
+    ConstListIterator operator--(int)
+      { ConstListIterator tmp = *this; --(*this); return tmp;}
+    friend bool operator== (const ConstListIterator& a,
+      const ConstListIterator& b)
+      { return a.m_ptr == b.m_ptr; };
+    friend bool operator== (const Map::ConstMapIterator& a,
+      const ConstListIterator& b)
+      { return *a.m_ptr == b.m_ptr; };
+    friend bool operator!= (const ConstListIterator& a, const 
+      ConstListIterator& b)
+      { return a.m_ptr != b.m_ptr; };
+    friend bool operator!= (const Map::ConstMapIterator& a,
+      const ConstListIterator& b)
+      { return *a.m_ptr != b.m_ptr; };
+  };
+
+  struct ConstMapIterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = IterListT;
+    using reference = T&;
+    ConstMapIterator(const IterSetT& ptr) {
+      m_ptr = ptr;
+    }
+    const reference operator*() const { return **m_ptr; }
+    const pointer operator->() { return *m_ptr; }
+    ConstMapIterator& operator++() { m_ptr++; return *this; }
+    ConstMapIterator& operator--() { m_ptr--; return *this; }
+    ConstMapIterator operator++(int)
+      { ConstMapIterator tmp = *this; ++(*this); return tmp;}
+    ConstMapIterator operator--(int)
+      { ConstMapIterator tmp = *this; --(*this); return tmp;}
+    friend bool operator== (const ConstMapIterator& a, const ConstMapIterator& b)
+      { return a.m_ptr == b.m_ptr; };
+    friend bool operator== (const ConstListIterator& a, const ConstMapIterator& b)
+      { return a.m_ptr == *b.m_ptr; };
+    friend bool operator!= (const ConstMapIterator& a, const ConstMapIterator& b)
+      { return a.m_ptr != b.m_ptr; };
+    friend bool operator!= (const ConstListIterator& a, const ConstMapIterator& b)
+      { return a.m_ptr != *b.m_ptr; };
+   private:
+    IterSetT m_ptr;
+  };
+
   struct MapIterator {
     using iterator_category = std::bidirectional_iterator_tag;
     using difference_type = std::ptrdiff_t;
@@ -142,6 +207,7 @@ class Map {
   void setClrMax(const Clr& x);
   Clr getClr();
   Clr getClrMax();
+  void setClr(const Clr& clr);
   IterSetT find(const Key& key);
   void flatten_clear();
   void moveToFront(IterListT& it);
@@ -149,6 +215,8 @@ class Map {
   ListIterator list_end();
   MapIterator map_begin();
   MapIterator map_end();
+  ConstMapIterator map_cbegin() const;
+  ConstMapIterator map_cend() const;
   MapIterator map_lower_bound(const Key& key);
   MapIterator map_upper_bound(const Key& key);
   MapIterator map_find(const Key& key);
@@ -180,6 +248,13 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+setClr(const Clr& clr) {
+  clr_ = clr;
+}
 
 template<class Key, class Val, class Compare>
 void
@@ -240,6 +315,22 @@ Map<Key, Val, Compare>::
 map_upper_bound(const Key& key) {
   (*list_temp_it_).key_ = key;
   return MapIterator(set_.upper_bound(list_temp_it_));
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+ConstMapIterator
+Map<Key, Val, Compare>::
+map_cbegin() const {
+  return ConstMapIterator(set_.begin());
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+ConstMapIterator
+Map<Key, Val, Compare>::
+map_cend() const {
+  return ConstMapIterator(set_.end());
 }
 
 template<class Key, class Val, class Compare>
