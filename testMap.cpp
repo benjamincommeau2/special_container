@@ -289,6 +289,17 @@ int main() {
     if(h%2==1) {itm++;} else {++itm;}
     h++;
   }
-
+  //std::vector<T> input = {T(1,2,1,2),T(3,3,3,3),T(7,3,7,3),T(2,7,2,7)};
+  std::cout << std::endl;
+  auto it_begin = map.map_lower_bound(K(1,3));
+  auto it_end = map.map_upper_bound(K(3,4));
+  itm = it_begin;
+  h=0;
+  while(itm != it_end) {
+    std::cout << itm->key_.to_string() << " " << itm->val_.to_string()
+      << std::endl;
+    if(h%2==1) {itm++;} else {++itm;}
+    h++;
+  }
   return 0;
 }
