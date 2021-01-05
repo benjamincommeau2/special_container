@@ -223,10 +223,11 @@ void test_try_emplace() {
 
 template<class K, class V, class C = std::less<K>>
 void test_constant_iterator(const Map<K,V,C>& M) {
-  auto it = M.map_cbegin();
-  it = M.map_cbegin();
-  it = M.map_clower_bound(K(0,0));
-  (*it).val_.v = -1;
+  //auto it = M.map_cbegin();
+  //it = M.map_cbegin();
+  //it = M.map_clower_bound(K(0,0));
+  auto it = M.list_cbegin();
+  it->val_.v = -1;
 }
 
 int main() {
@@ -276,7 +277,7 @@ int main() {
   Map<K,V>::ListIterator it = map.list_begin(); 
   int h = 0;
   while(it != map.list_end()) {
-    std::cout << it->key_.to_string() << " " << it->val_.to_string() << std::endl;
+    std::cout << (*it).key_.to_string() << " " << it->val_.to_string() << std::endl;
     if(h%2==0) {it++;} else {++it;}
     h++;
   }
