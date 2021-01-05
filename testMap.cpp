@@ -221,6 +221,14 @@ void test_try_emplace() {
   std::cout << map.to_string() << std::endl;
 }
 
+template<class K, class V, class C = std::less<K>>
+void test_constant_iterator(const Map<K,V,C>& M) {
+  auto it = M.map_cbegin();
+  it = M.map_cbegin();
+  it = M.map_clower_bound(K(0,0));
+  (*it).val_.v = -1;
+}
+
 int main() {
   struct K {
     int x; int y;
@@ -311,5 +319,15 @@ int main() {
   auto it_find = map.map_find(K(3,3));
   std::cout << it_find->key_.to_string() << " " << it_find->val_.to_string()
     << std::endl;
+  std::cout << "Test Constant Iterator" << std::endl;
+  test_constant_iterator(map);
+  itm = map.map_begin();
+  h=0;
+  while(itm != map.map_end()) {
+    std::cout << itm->key_.to_string() << " " << itm->val_.to_string()
+      << std::endl;
+    if(h%2==1) {itm++;} else {++itm;}
+    h++;
+  }
   return 0;
 }

@@ -83,7 +83,8 @@ class Matrix {
   void AoBeC(Matrix& A, Matrix& B, Matrix& C);
   void transpose2();
   Map<K,V>::Clr getClr();
-  void addScaleMatrixMultTrans(const Value& v, const Matrix& A, const Matrix& B);
+  void addScaleMatrixMultTrans(const Value& v, const Matrix& A, const Matrix& B,
+    const std::map<int,int>& m);
   Map<Matrix::K,Matrix::V>::MapIterator map_begin();
   Map<Matrix::K,Matrix::V>::MapIterator map_end();
   Map<Matrix::K,Matrix::V>::ConstMapIterator map_cbegin() const;
@@ -143,8 +144,12 @@ map_upper_bound(const K& k) {
 void
 Matrix::
 addScaleMatrixMultTrans(const Matrix::Value& s, const Matrix& A,
-  const Matrix& B) {
+  const Matrix& B, const std::map<int,int>& m) {
   // C = A@Bt
+
+  auto it = m.cbegin();
+  it = m.lower_bound(0);
+
   auto a_lower = A.map_cbegin();
   auto a = A.map_cbegin();
   auto a_upper = A.map_cbegin();
