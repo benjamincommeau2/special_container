@@ -1,12 +1,19 @@
 clear
-opt="O3" # removes performance timing loops, compliant high optimization
-opt="O1" # allows performance timing loops
+#gcc opt="O3" removes performance timing loops, compliant high optimization
+#gcc opt="O1" allows performance timing loops
 script=testMap
-> compile.errors.txt
-g++ -std=c++20 -$opt -c $script.cpp 2>&1 | tee -a compile.errors.txt
-g++ -std=c++20 -$opt -o myexec.o $script.o 2>&1 | tee -a compile.errors.txt
-if [[ -s compile.errors.txt ]] ; then
+error=compile.cerr
+execo=myexec.o
+> $error
+#-fdiagnostics-color=always
+#-fdiagnostics-show-template-tree
+#-fmessage-length
+opt="-O3 -std=c++20 -fdiagnostics-show-template-tree -fmessage-length=80"
+g++ $opt -c $script.cpp 2>&1 | tee -a $error
+g++ $opt -o $execo $script.o 2>&1 | tee -a $error
+if [[ -s $error ]] ; then
+  vi $error
   exit
 else
-  ./myexec.o
+  ./$execo 
 fi

@@ -108,7 +108,7 @@ void test_list_slice() {
     itl++; itm++;
   }
 }
-
+/*
 void quick_print_test() {
   struct intint {
     int x_; int y_;
@@ -175,7 +175,6 @@ void quick_print_test() {
   tmap.try_emplace(intint(9,10),intstr(11,"c"));
   std::cout << tmap.to_string() << std::endl;
 }
-
 void test_try_emplace() {
   struct K {
     int x; int y;
@@ -220,14 +219,18 @@ void test_try_emplace() {
   }
   std::cout << map.to_string() << std::endl;
 }
+*/
 
 template<class K, class V, class C = std::less<K>>
 void test_constant_iterator(const Map<K,V,C>& M) {
   //auto it = M.map_cbegin();
-  //it = M.map_cbegin();
-  //it = M.map_clower_bound(K(0,0));
-  auto it = M.list_cbegin();
-  it->val_.v = -1;
+  auto it = M.map_cbegin();
+  //it = M.map_begin();
+  std::cout << it->key_.to_string() << " " << (*it).val_.to_string() << std::endl;
+  it++;
+  std::cout << it->key_.to_string() << " " << (*it).val_.to_string() << std::endl;
+  std::cout << std::endl;
+  //(*it).val_.v = -69;
 }
 
 int main() {
@@ -238,14 +241,8 @@ int main() {
     bool operator <(const K& rhs) const {
       return x != rhs.x ? x < rhs.x : y < rhs.y;
     }
-    std::string to_string() {
-      std::string tmp = "";
-      tmp += "(";
-      tmp += std::to_string(x);
-      tmp += ",";
-      tmp += std::to_string(y);
-      tmp += ")";
-      return tmp;
+    std::string to_string() const {
+      return "(" + std::to_string(x) + "," + std::to_string(y) + ")";
     }
   };
   struct V {
@@ -253,7 +250,7 @@ int main() {
     V() {}
     V(const std::complex<double>& v_) {v = v_;}
     V(const double& r_, const double& i_) {v = std::complex<double>(r_, i_);}
-    std::string to_string() {
+    std::string to_string() const {
       return "(" + std::to_string(v.real()) + " "
       + std::to_string(v.imag()) + ")";
     }
@@ -287,18 +284,27 @@ int main() {
   it = map.list_end();
   it--;
   while(true) {
-    std::cout << it->key_.to_string() << " " << it->val_.to_string() << std::endl;
+    std::cout << (*it).key_.to_string() << " " << (*it).val_.to_string() << std::endl;
     if (it == map.list_begin()) {break;}
     if(h%2==1) {it--;} else {--it;}
     h++;
   }
   std::cout << std::endl;
   std::cout << "test map map iterator" << std::endl;
+  typedef Map<K, V>::MapIterator MI;
+  //itm = map.map_begin();
   auto itm = map.map_begin();
   h = 0;
   while(itm != map.map_end()) {
-    std::cout << itm->key_.to_string() << " " << itm->val_.to_string()
+    std::cout << "h=" << h << " " << (*itm).key_.to_string() << " "
+      << (*itm).val_.to_string() << std::endl;
+    /*
+    (*itm).key_.y = 69;
+    std::cout << (*itm).key_.to_string() << " " << (*itm).val_.to_string()
       << std::endl;
+    */
+    /*
+    */
     if(h%2==1) {itm++;} else {++itm;}
     h++;
   }
@@ -310,7 +316,7 @@ int main() {
   itm = it_begin;
   h=0;
   while(itm != it_end) {
-    std::cout << itm->key_.to_string() << " " << itm->val_.to_string()
+    std::cout << (*itm).key_.to_string() << " " << (*itm).val_.to_string()
       << std::endl;
     if(h%2==1) {itm++;} else {++itm;}
     h++;

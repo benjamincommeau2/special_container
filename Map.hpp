@@ -66,16 +66,18 @@ class Map {
   };
   typedef std::set<IterListT,LessIter> SetT;
   typedef SetT::iterator IterSetT;
+  typedef std::set<ConstIterListT,LessIter> SetConstT;
+  typedef SetConstT::const_iterator IterSetConstT;
   typedef std::pair<IterSetT,bool> IterBoolSetT;
 
   /* //////////////////////////////////////////////////////////////
   Iterators
   */ //////////////////////////////////////////////////////////////
 
-  template<bool IsConst, class Type>
+  template<class IterType, bool IsConst>
   class Iterator {
    private:
-    Type ptr_;
+    IterType it_;
    public:
     /* //////////////////////////////////////////////////////////////
     STL Types for Algrothim Iterator Compliance
@@ -83,55 +85,69 @@ class Map {
     using iterator_category = std::bidirectional_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = T;
-    using pointer = IterListT;
     using reference = T&;
-    /* //////////////////////////////////////////////////////////////
-    Carefully constructed copy and assignments operators to handle both
-    iterators and constant iterators
-    */ //////////////////////////////////////////////////////////////
-    Iterator(const Iterator&) = default;
-    Iterator& operator=(const Iterator&) = default;
-    Iterator(const Type& it) {ptr_ = it;}
-    template<bool WasConst, class = std::enable_if_t<IsConst && !WasConst>>
-    Iterator(const Iterator<WasConst,Type>& rhs) : ptr_(rhs.ptr_) {}
-    template<bool WasConst = IsConst, class = std::enable_if_t<WasConst>>
-    Iterator& operator=(const Iterator<false,Type>& rhs)
-      {ptr_ = rhs.ptr_; return *this;}
+    using pointer = IterListT;
     /* //////////////////////////////////////////////////////////////
     Conditionally Overloaded Reference Operators
     */ //////////////////////////////////////////////////////////////
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<!IsConst_ && std::is_same<IterListT,Type_>::value,reference>
-    operator*() {return *ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<IsConst_ && std::is_same<IterListT,Type_>::value,const reference>
-    operator*() const {return *ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<!IsConst_ && std::is_same<IterSetT,Type_>::value,reference>
-    operator*() {return **ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<IsConst_ && std::is_same<IterSetT,Type_>::value,const reference>
-    operator*() const {return **ptr_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterListT>::value && !IsConst, reference>
+    operator*() {return *it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterListT>::value && IsConst, const T>
+    operator*() const {return *it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterSetT>::value && !IsConst, reference>
+    operator*() {return **it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterSetT>::value && IsConst, const T>
+    operator*() const {return **it_;}
     /* //////////////////////////////////////////////////////////////
     Conditionally Overloaded Pointer Operators
     */ //////////////////////////////////////////////////////////////
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<!IsConst_ && std::is_same<IterListT,Type_>::value,pointer>
-    operator->() {return ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<IsConst_ && std::is_same<IterListT,Type_>::value,const pointer>
-    operator->() const {return ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<!IsConst_ && std::is_same<IterSetT,Type_>::value,pointer>
-    operator->() {return *ptr_;}
-    template<bool IsConst_ = IsConst, typename Type_ = Type>
-    std::enable_if_t<IsConst_ && std::is_same<IterSetT,Type_>::value,const pointer>
-    operator->() const {return *ptr_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterListT>::value && !IsConst, pointer>
+    operator->() {return it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterListT>::value && IsConst, pointer>
+    operator->() const {return it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterSetT>::value && !IsConst, pointer>
+    operator->() {return *it_;}
+    template<class IterType_ = IterType> typename std::enable_if_t<
+      std::is_same<IterType_, IterSetT>::value && IsConst, pointer>
+    operator->() const {return *it_;}
+    /* //////////////////////////////////////////////////////////////
+    Constructors using both non/constant
+    */ //////////////////////////////////////////////////////////////
+    Iterator(const Iterator &) = default;
+    Iterator() {}
+    template<class IterType_ = IterType, class = 
+      std::enable_if_t<std::is_same<IterType_, IterListT>::value>>
+    Iterator(const IterListT& it) {it_ = it;}
+    template<class IterType_ = IterType, class = 
+      std::enable_if_t<std::is_same<IterType_, IterSetT>::value>>
+    Iterator(const IterSetT& it) {it_ = it;}
+    template<bool IsConst_>
+    Iterator<IterType, IsConst>(const Iterator<IterType, IsConst_>& rhs)
+      {it_ = rhs.it_;}
+    /* //////////////////////////////////////////////////////////////
+    Carefully constructed Assignments to handle both non/constant
+    */ //////////////////////////////////////////////////////////////
+    Iterator& operator= (const Iterator&) = default;
+    /*
+    template<bool IsConst_, class = std::enable_if_t<!IsConst>>
+    Iterator& operator=(const Iterator<IterType, IsConst_>& rhs)
+      {it_ = rhs.it_; return *this;}
+    template<bool IsConst_, class = std::enable_if_t<IsConst>>
+    Iterator& operator=(const Iterator<IterType, IsConst_>& rhs)
+      const {it_ = rhs.it_; return *this;}
+    */
     /* //////////////////////////////////////////////////////////////
     Increment/Decrement Operators
     */ //////////////////////////////////////////////////////////////
-    Iterator& operator++() { ptr_++; return *this; }
-    Iterator& operator--() { ptr_--; return *this; }
+    Iterator& operator++() { it_++; return *this; }
+    Iterator& operator--() { it_--; return *this; }
     Iterator operator++(int)
       { Iterator tmp = *this; ++(*this); return tmp;}
     Iterator operator--(int)
@@ -140,20 +156,18 @@ class Map {
     Comparison Operators
     */ //////////////////////////////////////////////////////////////
     friend bool operator== (const Iterator& a, const Iterator& b)
-      { return a.ptr_ == b.ptr_; };
+      { return a.it_ == b.it_; };
     friend bool operator!= (const Iterator& a, const Iterator& b)
-      { return a.ptr_ != b.ptr_; };
+      { return a.it_ != b.it_; };
   };
   
-  using ListIterator = Iterator<false,IterListT>;
-  using ConstListIterator = Iterator<true,IterListT>;
+  using ListIterator =      Iterator<IterListT,false>;
+  using ConstListIterator = Iterator<IterListT,true>;
+  using MapIterator =       Iterator<IterSetT,false>;
+  using ConstMapIterator =  Iterator<IterSetT,true>;
 
   static_assert(std::is_copy_constructible_v<ConstListIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstListIterator>);
-  
-  using MapIterator = Iterator<false,IterSetT>;
-  using ConstMapIterator = Iterator<true,IterSetT>;
-
   static_assert(std::is_copy_constructible_v<ConstMapIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstMapIterator>);
 
