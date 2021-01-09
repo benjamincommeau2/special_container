@@ -30,34 +30,51 @@ The rationale for the trailing underscore and the global/static prefixes is that
 #include <random>
 #include <iomanip>
 #include <sstream>
-
+/* //////////////////////////////////////////////////////////////
+Class Definition
+*/ //////////////////////////////////////////////////////////////
 #ifndef MAP_HPP
 #define MAP_HPP
 template<class Key, class Val, class Compare = std::less<Key>>
 class Map {
  public:
   typedef uint64_t Clr;
-
+  Map() {
+    hard_clear();
+  }
   /* //////////////////////////////////////////////////////////////
   List of T's
   */ //////////////////////////////////////////////////////////////
-
-  struct T {
-    Key key_; Val val_; Clr clr_;
+  class T {
+   public:
     T() {}
     T(const Key& key) {key_ = key;}
-    T(const Key& key, const Val& val, const Clr& clr) {
-      key_ = key; val_ = val; clr_ = clr;
-    }
+    T(const Key& key, const Val& val, const Clr& clr)
+      {key_ = key; val_ = val; clr_ = clr;}
+    Val& val() const {return val_;}
+   private:
+    friend class Map;
+    Key key_; Val val_; Clr clr_;
   };
+  class EvalT {
+   public:
+    EvalT* t;
+    EvalT(Eval* tt) {t = tt;}
+    class ValConstKeyClr{
+      T& tt;
+      ValConstKeyClr(T& ttt) {tt = ttt;}
+    };
+    ValConstKeyClr x = ValConstKeyClr(t);
+  };
+  T t;
+  EvalT o = EvalT(t);
+
   typedef std::list<T> ListT;
   typedef ListT::iterator IterListT;
   typedef ListT::const_iterator ConstIterListT;
-
   /* //////////////////////////////////////////////////////////////
   Set of List Iterators
   */ //////////////////////////////////////////////////////////////
-
   struct LessIter {
     Compare compare_ = Compare();
     bool operator() (const IterListT& lhs, const IterListT& rhs) const {
@@ -66,19 +83,20 @@ class Map {
   };
   typedef std::set<IterListT,LessIter> SetT;
   typedef SetT::iterator IterSetT;
-  typedef std::set<ConstIterListT,LessIter> SetConstT;
-  typedef SetConstT::const_iterator IterSetConstT;
   typedef std::pair<IterSetT,bool> IterBoolSetT;
-
   /* //////////////////////////////////////////////////////////////
-  Iterators
+  Iterator Class Definition
   */ //////////////////////////////////////////////////////////////
-
   template<class IterType, bool IsConst>
   class Iterator {
    private:
-    IterType it_;
+    friend class Map;
+    mutable IterType it_; mutable bool is_valid_ = false;
    public:
+    /* //////////////////////////////////////////////////////////////
+    Public Methods Definitions
+    */ //////////////////////////////////////////////////////////////
+    bool IsValid() {return is_valid_;}
     /* //////////////////////////////////////////////////////////////
     STL Types for Algrothim Iterator Compliance
     */ //////////////////////////////////////////////////////////////
@@ -99,9 +117,10 @@ class Map {
     template<class IterType_ = IterType> typename std::enable_if_t<
       std::is_same<IterType_, IterSetT>::value && !IsConst, reference>
     operator*() {return **it_;}
-    template<class IterType_ = IterType> typename std::enable_if_t<
-      std::is_same<IterType_, IterSetT>::value && IsConst, const T>
-    operator*() const {return **it_;}
+    template<class IterType_ = IterType> std::enable_if_t<
+      std::is_same<IterType_, IterSetT>::value && IsConst, T>
+    operator*() const {std::cout << "hi0" << std::endl;
+      return (**it_);}
     /* //////////////////////////////////////////////////////////////
     Conditionally Overloaded Pointer Operators
     */ //////////////////////////////////////////////////////////////
@@ -115,33 +134,38 @@ class Map {
       std::is_same<IterType_, IterSetT>::value && !IsConst, pointer>
     operator->() {return *it_;}
     template<class IterType_ = IterType> typename std::enable_if_t<
-      std::is_same<IterType_, IterSetT>::value && IsConst, pointer>
-    operator->() const {return *it_;}
+      std::is_same<IterType_, IterSetT>::value && IsConst, ConstIterListT>
+    operator->() const {std::cout << "hi" << std::endl; return *it_;}
     /* //////////////////////////////////////////////////////////////
     Constructors using both non/constant
     */ //////////////////////////////////////////////////////////////
-    Iterator(const Iterator &) = default;
+    Iterator(const Iterator&) = default;
     Iterator() {}
     template<class IterType_ = IterType, class = 
       std::enable_if_t<std::is_same<IterType_, IterListT>::value>>
     Iterator(const IterListT& it) {it_ = it;}
+    //Iterator(const ConstIterListT& it) {it_ = it;}
     template<class IterType_ = IterType, class = 
       std::enable_if_t<std::is_same<IterType_, IterSetT>::value>>
     Iterator(const IterSetT& it) {it_ = it;}
-    template<bool IsConst_>
-    Iterator<IterType, IsConst>(const Iterator<IterType, IsConst_>& rhs)
-      {it_ = rhs.it_;}
+    template<bool IsConst_ = IsConst, class = std::enable_if_t<IsConst_>>
+    Iterator(const Iterator<IterType, false>& rhs)
+      {it_ = rhs.it_; is_valid_ = rhs.is_valid_;}
     /* //////////////////////////////////////////////////////////////
     Carefully constructed Assignments to handle both non/constant
     */ //////////////////////////////////////////////////////////////
-    Iterator& operator= (const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    template<bool IsConst_ = IsConst, class = std::enable_if_t<!IsConst_>>
+    Iterator& operator= (const Iterator<IterType,false>& rhs)
+    {it_ = rhs.it_; is_valid_ = rhs.is_valid_; return *this;}
+    template<bool IsConst_, bool IsConst__ = IsConst, class =
+       std::enable_if_t<IsConst__>>
+    void operator= (const Iterator<IterType,IsConst_>& rhs) const
+    {it_ = rhs.it_; is_valid_ = rhs.is_valid_; }
     /*
-    template<bool IsConst_, class = std::enable_if_t<!IsConst>>
-    Iterator& operator=(const Iterator<IterType, IsConst_>& rhs)
-      {it_ = rhs.it_; return *this;}
-    template<bool IsConst_, class = std::enable_if_t<IsConst>>
-    Iterator& operator=(const Iterator<IterType, IsConst_>& rhs)
-      const {it_ = rhs.it_; return *this;}
+    template<bool IsConst_ = IsConst, class = std::enable_if_t<IsConst_>>
+    Iterator& operator=(const Iterator<IterType,false>& rhs) const
+    {it_ = rhs.it_; is_valid_ = rhs.is_valid_; return *this;}
     */
     /* //////////////////////////////////////////////////////////////
     Increment/Decrement Operators
@@ -160,75 +184,78 @@ class Map {
     friend bool operator!= (const Iterator& a, const Iterator& b)
       { return a.it_ != b.it_; };
   };
-  
+  /* //////////////////////////////////////////////////////////////
+  Iterator Defintions
+  */ //////////////////////////////////////////////////////////////
   using ListIterator =      Iterator<IterListT,false>;
   using ConstListIterator = Iterator<IterListT,true>;
   using MapIterator =       Iterator<IterSetT,false>;
   using ConstMapIterator =  Iterator<IterSetT,true>;
-
+  /* //////////////////////////////////////////////////////////////
+  Check if Constant Iterators are valid
+  */ //////////////////////////////////////////////////////////////
+  /*
   static_assert(std::is_copy_constructible_v<ConstListIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstListIterator>);
   static_assert(std::is_copy_constructible_v<ConstMapIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstMapIterator>);
-
+  */
   /* //////////////////////////////////////////////////////////////
-  Methods
+  Implicit Methods Definitions without Iterators
   */ //////////////////////////////////////////////////////////////
-
-  IterBoolSetT try_emplace(const Key& key, const Val& val);
-  void setIterList(IterListT& it, const Key& key);
-  IterSetT begin();
-  IterSetT end();
-  std::string to_string();
+  void setClr(const Clr& clr);
+  void flatten_clear();
+  Clr getClrMax() const;
+  Clr getClr() const;
+  void setClrMax(const Clr& x);
   void clear();
   void hard_clear();
-  void setClrMax(const Clr& x);
-  Clr getClr();
-  Clr getClrMax();
-  void setClr(const Clr& clr);
-  IterSetT find(const Key& key);
-  void flatten_clear();
-  void moveToFront(IterListT& it);
-  ListIterator list_begin();
-  ListIterator list_end();
-  ConstListIterator list_cbegin() const;
-  ConstListIterator list_cend() const;
-  MapIterator map_begin();
-  MapIterator map_end();
-  ConstMapIterator map_cbegin() const;
-  ConstMapIterator map_cend() const;
-  ConstMapIterator map_clower_bound(const Key& key) const;
-  ConstMapIterator map_cupper_bound(const Key& key) const;
-  MapIterator map_lower_bound(const Key& key);
-  MapIterator map_upper_bound(const Key& key);
+  /* //////////////////////////////////////////////////////////////
+  Implicit Methods Definitions with Iterators
+  */ //////////////////////////////////////////////////////////////
+  std::string to_string() const;
   MapIterator map_find(const Key& key);
+  void move2Front(MapIterator& it);
+  MapIterator rawInsert(const Key& key, const Val& val);
   void reInsertKey(MapIterator& it, const Key& key);
   void reInsertKey(MapIterator& it0, const Key& key0,
     MapIterator& it1, const Key& key1);
-  void move2Front(MapIterator& it);
-
-  /* //////////////////////////////////////////////////////////////
-  Public Variables
-  */ //////////////////////////////////////////////////////////////
-
-  SetT set_;
-  ListT list_;
-  mutable ListT list_temp_ = {T()};
-  mutable IterListT list_temp_it_ = list_temp_.begin();
-
+  MapIterator map_lower_bound(const Key& key);
+  MapIterator map_upper_bound(const Key& key);
+  ConstMapIterator map_clower_bound (const Key& key) const;
+  ConstMapIterator
+  map_cupper_bound (const Key& key) const;
+  ConstMapIterator map_cbegin() const;
+  ConstMapIterator map_cend() const;
+  MapIterator map_begin(); 
+  MapIterator map_end(); 
+  ConstListIterator list_cbegin() const;
+  ConstListIterator list_cend() const; 
+  ListIterator list_begin();
+  ListIterator list_end();
+  MapIterator try_emplace(const Key& key, const Val& val);
  private:
+  /* //////////////////////////////////////////////////////////////
+  Private Variables
+  */ //////////////////////////////////////////////////////////////
   Clr clr_ = 1;
-  Clr clr_max_ = UINT64_MAX; //0xFFFFFFFFFFFFFFFF;
-  IterBoolSetT iter_bool_set_;
-  //IterListT iter_list_ = list_.begin();
-  //IterListT iter_list_clr_end_ = list_.end();
-  IterListT list_it_ = list_.begin();
-  IterListT list_begin_ = list_.begin();
-
+  Clr clr_max_ = UINT64_MAX;
+  mutable SetT set_;
+  mutable ListT list_ = {T()};
+  mutable ListT list_temp_ = {T()};
+  /* //////////////////////////////////////////////////////////////
+  Private Variable using Iterator Class
+  */ //////////////////////////////////////////////////////////////
+  ListIterator list_begin_;
+  mutable ListIterator list_temp_it_ = ListIterator(list_temp_.begin());
+  ListIterator itl_;
+  MapIterator itm_;
+  ConstListIterator citl_;
+  ConstMapIterator citm_;
 };
 
 /* //////////////////////////////////////////////////////////////
-Explicit Methods
+Explicit Methods without Iterators
 */ //////////////////////////////////////////////////////////////
 
 template<class Key, class Val, class Compare>
@@ -241,34 +268,103 @@ setClr(const Clr& clr) {
 template<class Key, class Val, class Compare>
 void
 Map<Key, Val, Compare>::
-move2Front(MapIterator& it) {
-  list_.splice(list_begin_, list_, *it.m_ptr);
-  list_begin_ = *it.m_ptr;
+flatten_clear() {
+  auto it = list_.begin();
+  while(it != list_.end()) {
+    if(it->clr_ != clr_) {
+      it->clr_ = 0;
+    } else {
+      it->clr_ = 1;
+    }
+    it++;
+  }
+  clr_ = 1;
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+Clr
+Map<Key, Val, Compare>::
+getClrMax() const {
+  return clr_max_;
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+Clr
+Map<Key, Val, Compare>::
+getClr() const {
+  return clr_;
 }
 
 template<class Key, class Val, class Compare>
 void
 Map<Key, Val, Compare>::
-reInsertKey(MapIterator& it0, const Key& key0,
-  MapIterator& it1, const Key& key1) {
-  auto nh0 = set_.extract(it0.m_ptr);
-  auto nh1 = set_.extract(it1.m_ptr);
-  (*nh0.value()).key_ = key0;
-  (*nh1.value()).key_ = key1;
-  set_.insert(std::move(nh0));
-  set_.insert(std::move(nh1));
-  it0 = map_find(key0);
-  it1 = map_find(key1);
+setClrMax(const Clr& x) {
+  clr_max_ = x;
 }
 
 template<class Key, class Val, class Compare>
 void
 Map<Key, Val, Compare>::
-reInsertKey(MapIterator& it, const Key& key) {
-  auto nh = set_.extract(it.m_ptr);
-  (*nh.value()).key_ = key;
-  set_.insert(std::move(nh));
-  it = map_find(key);
+clear() {
+  if(clr_ < clr_max_) {
+    clr_++;
+  } else {
+    auto it = list_.begin();
+    while (it != list_.end()) {
+      it->clr_ = 0;
+      it++;
+    }
+  }
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+hard_clear() {
+  set_.clear();
+  list_.clear();
+  list_.push_front(T());
+  list_.begin()->clr_ = clr_;
+  list_begin_.it_ = list_.end();
+  clr_ = 1;
+}
+
+
+/* //////////////////////////////////////////////////////////////
+Explicit Methods with Iterators
+*/ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+std::string
+Map<Key, Val, Compare>::
+to_string() const {
+  auto citm = map_cbegin();
+  auto citl = list_cbegin();
+  std::ostringstream tmp ;
+  tmp.precision(3);
+  tmp << std::fixed << std::setprecision(2);
+  tmp << "clr_=" << clr_;
+  tmp << " list_.begin() -> ";
+  tmp << citl->key_.to_string() << " ";
+  tmp << (*citl).val_.to_string() << " ";
+  tmp << std::to_string(citl->clr_) << "\n";
+  tmp << "set_.size()=" << std::to_string(set_.size());
+  tmp << " | ";
+  tmp << "list_.size()=" << std::to_string(list_.size());
+  tmp << "\n";
+  citl++;
+  while (citm != map_cend() && citl_ != list_cend()) {
+    tmp << (*citm).key_.to_string() << " ";
+    tmp << citm->val_.to_string() << " ";
+    tmp << std::to_string((*citm).clr_) << " | ";
+    tmp << citl->key_.to_string() << " ";
+    tmp << citl->val_.to_string() << " ";
+    tmp << std::to_string(citl->clr_) << "\n";
+    citm++; citl++;
+  }
+  return tmp.str();
 }
 
 template<class Key, class Val, class Compare>
@@ -276,9 +372,58 @@ Map<Key, Val, Compare>::
 MapIterator
 Map<Key, Val, Compare>::
 map_find(const Key& key) {
-  list_temp_it_ = list_temp_.begin();
   (*list_temp_it_).key_ = key;
-  return MapIterator(set_.find(list_temp_it_));
+  itm_ = MapIterator(set_.find(list_temp_it_.it_));
+  return itm_;
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+move2Front(MapIterator& itm) {
+  list_.splice(list_begin_.it_, list_, *itm.it_);
+  list_begin_ = itl_;
+}
+
+template<class Key, class Val, class Compare>
+Map<Key, Val, Compare>::
+MapIterator
+Map<Key, Val, Compare>::
+rawInsert(const Key& key, const Val& val) {
+  list_.begin()->val_ = val;
+  list_.begin()->key_ = key;
+  list_.begin()->clr_ = clr_;
+  set_.insert(list_.begin());
+  itm_ = map_find(key);
+  list_.push_front(T());
+  list_.begin()->clr_ = clr_;
+  list_begin_ = ListIterator(*itm_.it_);
+  return itm_;
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+reInsertKey(MapIterator& it, const Key& key) {
+  auto nh = set_.extract(it.it_);
+  (*nh.value()).key_ = key;
+  set_.insert(std::move(nh));
+  it = map_find(key);
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+reInsertKey(MapIterator& it0, const Key& key0,
+  MapIterator& it1, const Key& key1) {
+  auto nh0 = set_.extract(it0.it_);
+  auto nh1 = set_.extract(it1.it_);
+  (*nh0.value()).key_ = key0;
+  (*nh1.value()).key_ = key1;
+  set_.insert(std::move(nh0));
+  set_.insert(std::move(nh1));
+  it0 = map_find(key0);
+  it1 = map_find(key1);
 }
 
 template<class Key, class Val, class Compare>
@@ -387,201 +532,49 @@ list_end() {
 }
 
 template<class Key, class Val, class Compare>
-void
 Map<Key, Val, Compare>::
-moveToFront(IterListT& it) {
-  list_.splice(list_begin_, list_, it);
-  list_begin_ = it;
-}
-
-template<class Key, class Val, class Compare>
-void
-Map<Key, Val, Compare>::
-flatten_clear() {
-  auto it = list_.begin();
-  while(it != list_.end()) {
-    if(it->clr_ != clr_) {
-      it->clr_ = 0;
-    } else {
-      it->clr_ = 1;
-    }
-    it++;
-  }
-  clr_ = 1;
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-IterSetT
-Map<Key, Val, Compare>::
-find(const Key& key) {
-  list_it_ = list_.begin();
-  setIterList(list_it_, key);
-  return set_.find(list_it_);
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-Clr
-Map<Key, Val, Compare>::
-getClrMax() {
-  return clr_max_;
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-Clr
-Map<Key, Val, Compare>::
-getClr() {
-  return clr_;
-}
-
-template<class Key, class Val, class Compare>
-void
-Map<Key, Val, Compare>::
-setClrMax(const Clr& x) {
-  clr_max_ = x;
-}
-
-template<class Key, class Val, class Compare>
-void
-Map<Key, Val, Compare>::
-clear() {
-  if(clr_ < clr_max_) {
-    clr_++;
-  } else {
-    auto it = list_.begin();
-    while (it != list_.end()) {
-      it->clr_ = 0;
-      it++;
-    }
-  }
-}
-
-template<class Key, class Val, class Compare>
-void
-Map<Key, Val, Compare>::
-hard_clear() {
-  set_.clear();
-  list_.clear();
-}
-
-template<class Key, class Val, class Compare>
-std::string
-Map<Key, Val, Compare>::
-to_string() {
-  auto itm = set_.begin();
-  auto itl = list_.begin();
-  std::stringstream tmp ;
-  tmp << std::fixed << std::setprecision(2);
-  tmp << "clr_=" << clr_;
-  tmp << " list_.begin() -> ";
-  tmp << itl->key_.to_string() << " ";
-  tmp << itl->val_.to_string() << " ";
-  tmp << std::to_string(itl->clr_) << "\n";
-  tmp << "set_.size()=" << std::to_string(set_.size());
-  tmp << " | ";
-  tmp << "list_.size()=" << std::to_string(list_.size());
-  tmp << "\n";
-  itl++;
-  while (itm != set_.end() && itl != list_.end()) {
-    tmp << (**itm).key_.to_string() << " ";
-    tmp << (**itm).val_.to_string() << " ";
-    tmp << std::to_string((**itm).clr_) << " | ";
-    tmp << itl->key_.to_string() << " ";
-    tmp << itl->val_.to_string() << " ";
-    tmp << std::to_string(itl->clr_) << "\n";
-    itm++; itl++;
-  }
-  return tmp.str();
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-IterSetT
-Map<Key, Val, Compare>::
-begin() {
-  return set_.begin();
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-IterSetT
-Map<Key, Val, Compare>::
-end() {
-  return set_.end();
-}
-
-template<class Key, class Val, class Compare>
-void
-Map<Key, Val, Compare>::
-setIterList(IterListT& it, const Key& key) {
-  if (list_.size() != 0) {
-    if(it != list_.end()) { } else { it--; }
-    it->key_ = key;
-  } else {
-    list_.push_back(T(key));
-    it = list_.begin();
-    it -> clr_ = clr_;
-  }
-}
-
-template<class Key, class Val, class Compare>
-Map<Key, Val, Compare>::
-IterBoolSetT
+MapIterator
 Map<Key, Val, Compare>::
 try_emplace(const Key& key, const Val& val) {
-  if (list_.size() > 0) {
-  } else {
-    list_.push_back(T());
-    list_.begin() -> clr_ = clr_;
-    list_begin_ = list_.end();
-  }
-  list_it_ = list_.begin();
-  list_it_ -> key_ = key; 
-  iter_bool_set_.first = set_.find(list_it_);
-  if (iter_bool_set_.first != set_.end()) {
-    //std::cout << "key exists" << std::endl;
-    if ((**iter_bool_set_.first).clr_ != clr_) {
-      // std::cout << "key is cleared" << std::endl;
-      (**iter_bool_set_.first).clr_ = clr_;
-      (**iter_bool_set_.first).val_ = val;
-      list_.splice(list_begin_, list_, *iter_bool_set_.first);
-      iter_bool_set_.second = true;
-      list_begin_ = *iter_bool_set_.first;
+  itm_ = map_find(key);
+  if (itm_ != map_end()) {
+    std::cout << "key exists" << std::endl;
+    if (itm_->clr_ != clr_) {
+      std::cout << "key is cleared" << std::endl;
+      itm_->clr_ = clr_;
+      itm_->val_ = val;
+      move2Front(itm_);
+      itm_.is_valid_ = true;
     } else {
-     // std::cout << "key is not cleared" << std::endl;
-      iter_bool_set_.second = false;
+      std::cout << "key is not cleared" << std::endl;
+      itm_.is_valid_ = false;
     }
   } else {
-    //std::cout << "key does not exist" << std::endl;
-    list_it_ = list_.end(); list_it_--;
-    if (list_it_ -> clr_ != clr_) {
-     // std::cout << "a key is reusable" << std::endl;
-      auto nh = set_.extract(list_it_);
-      (*nh.value()).key_ = key;
-      (*nh.value()).val_= val;
-      (*nh.value()).clr_ = clr_;
-      set_.insert(std::move(nh));
-      iter_bool_set_.first = set_.find(list_it_);
-      iter_bool_set_.second = true;
-      list_.splice(list_begin_, list_, list_it_);
-      list_begin_ = list_it_;
+    std::cout << "key does not exist" << std::endl;
+    itl_.it_ = list_.end(); itl_--;
+    if (itl_->clr_ != clr_) {
+      std::cout << "a key is reusable" << std::endl;
+      itm_ = map_find(itl_->key_);
+      reInsertKey(itm_, key);
+      itl_->val_ = val;
+      itl_->clr_ = clr_;
+      move2Front(itm_);
+      itm_.is_valid_ = true;
     } else {
-      //std::cout << "no key is reusable" << std::endl;
-      list_it_ = list_.begin();
-      list_it_ -> val_ = val;
-      list_it_ -> clr_ = clr_;
-      list_it_ -> key_ = key;
-      iter_bool_set_ = set_.insert(list_it_);
-      list_.push_front(T());
-      list_.begin() -> clr_ = clr_;
-      list_begin_ = list_it_;
-      //std::cout << "val=" << val.v_.real() << std::endl;
-      //std::cout << to_string() << std::endl;
+      std::cout << "no key is reusable" << std::endl;
+      itm_ = rawInsert(key, val);
+      itm_.is_valid_ = true;
     }
   }
-  return  iter_bool_set_;
+  return  itm_;
 }
+
+
+/*
+endend
+
+
+
+*/
 
 #endif
