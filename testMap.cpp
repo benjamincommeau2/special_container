@@ -96,16 +96,22 @@ int main() {
   };
   Map<K, V> map;
   // start testing
+  std::cout << map.to_string() << std::endl;
   std::vector<T> input = {T(7,3,7,3),T(3,3,3,3),T(1,2,1,2),T(2,7,2,7)};
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
   }
+  std::cout << map.to_string() << std::endl;
+  /*
   std::cout << "try_emplace() for first initialize" << std::endl;
   auto citm = map.map_cbegin();
   citm = map.map_cbegin();
   auto itm = map.map_begin();
-  std::cout << map.to_string() << std::endl;
-  /*
+  auto itl = map.list_begin();
+  std::cout << "map key" << std::endl;
+  std::cout << itm->key().to_string() << std::endl;
+  std::cout << "list key" << std::endl;
+  std::cout << itl->key().to_string() << std::endl;
   map.hard_clear();
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);

@@ -78,7 +78,6 @@ class Map {
   class Iterator {
     friend class Map;
    private:
-    void setKey(const Key& key) {}
     /* //////////////////////////////////////////////////////////////
     Set Key
     */ //////////////////////////////////////////////////////////////
@@ -98,7 +97,7 @@ class Map {
       std::enable_if_t<std::is_same<IterType_, IterSetT>::value, void>
       setClr(const Clr& clr) {(**(qt_.t_)).clr_ = clr;}
     /* //////////////////////////////////////////////////////////////
-    Iter get/set
+    Iter Class Internal get/set
     */ //////////////////////////////////////////////////////////////
     IterType& It() {return qt_.t_;}
     IterType getIt() const {return qt_.t_;}
@@ -113,7 +112,7 @@ class Map {
       mutable IterType_ t_;
      public:
       /* //////////////////////////////////////////////////////////////
-      Key Const
+      Key Read-Only
       */ //////////////////////////////////////////////////////////////
       template<class IterType__ = IterType_>
         std::enable_if_t<std::is_same<IterType__, IterListT>::value, Key>
@@ -122,7 +121,7 @@ class Map {
         std::enable_if_t<std::is_same<IterType__, IterSetT>::value, Key>
         key() const {return (**t_).key_;}
       /* //////////////////////////////////////////////////////////////
-      Clr Const
+      Clr Read-Only
       */ //////////////////////////////////////////////////////////////
       template<class IterType__ = IterType_>
         std::enable_if_t<std::is_same<IterType__, IterListT>::value, Clr>
@@ -131,7 +130,7 @@ class Map {
         std::enable_if_t<std::is_same<IterType__, IterSetT>::value, Clr>
         clr() const {return (**t_).clr_;}
       /* //////////////////////////////////////////////////////////////
-      Val Const
+      Val Read-Only
       */ //////////////////////////////////////////////////////////////
       template<class IterType__ = IterType_, bool IsConst__ = IsConst_>
         std::enable_if_t<std::is_same<IterType__, IterListT>::value
@@ -142,7 +141,7 @@ class Map {
         && IsConst__, Val>
         val() const {return (**t_).val_;}
       /* //////////////////////////////////////////////////////////////
-      Val Reference
+      Val Read/Write
       */ //////////////////////////////////////////////////////////////
       template<class IterType__ = IterType_, bool IsConst__ = IsConst_>
         std::enable_if_t<std::is_same<IterType__, IterListT>::value
@@ -168,7 +167,7 @@ class Map {
     using difference_type = std::ptrdiff_t;
     using value_type = QT<IterType, IsConst>;
     using reference = QT<IterType, IsConst>&;
-    using pointer = IterListT;
+    using pointer = QT<IterType, IsConst>*;
     /* //////////////////////////////////////////////////////////////
     Conditionally Overloaded Reference Operators
     */ //////////////////////////////////////////////////////////////
@@ -364,12 +363,12 @@ template<class Key, class Val, class Compare>
 void
 Map<Key, Val, Compare>::
 hard_clear() {
+  clr_ = 1;
   set_.clear();
   list_.clear();
   list_.push_front(T());
   list_.begin()->clr_ = clr_;
   list_begin_.It() = list_.end();
-  clr_ = 1;
 }
 
 
@@ -382,7 +381,7 @@ std::string
 Map<Key, Val, Compare>::
 to_string() const {
   auto citm = map_cbegin();
-  auto citl = list_cbegin();
+  auto citl = ConstListIterator(list_.begin());
   std::ostringstream tmp ;
   tmp.precision(3);
   tmp << std::fixed << std::setprecision(2);
@@ -431,14 +430,16 @@ Map<Key, Val, Compare>::
 MapIterator
 Map<Key, Val, Compare>::
 rawInsert(const Key& key, const Val& val) {
-  list_.begin()->val_ = val;
-  list_.begin()->key_ = key;
-  list_.begin()->clr_ = clr_;
-  set_.insert(list_.begin());
-  itm_ = map_find(key);
   list_.push_front(T());
   list_.begin()->clr_ = clr_;
-  list_begin_ = ListIterator(*(itm_.getIt()));
+  auto itl = list_.begin(); ++itl;
+  itl->val_ = val;
+  itl->key_ = key;
+  itl->clr_ = clr_;
+  set_.insert(itl);
+  itm_ = map_find(key);
+  list_begin_ = ListIterator(itl);
+  std::cout << to_string() << std::endl;
   return itm_;
 }
 
