@@ -82,8 +82,10 @@ int main() {
     V(const double& v_) {v = v_;}
     V(const double& r_, const double& i_) {v = std::complex<double>(r_, i_);}
     std::string to_string() const {
-      return "(" + std::to_string(v.real()) + " "
-      + std::to_string(v.imag()) + ")";
+      std::ostringstream oss;
+      oss << std::fixed << std::setprecision(2) << "(" << v.real() << " "
+        << v.imag() << ")";
+      return oss.str();
     }
   };
   struct T {
@@ -96,48 +98,20 @@ int main() {
   };
   Map<K, V> map;
   // start testing
-  std::cout << map.to_string() << std::endl;
-  std::vector<T> input = {T(7,3,7,3),T(3,3,3,3),T(1,2,1,2),T(2,7,2,7)};
+  std::vector<T> input = {T(7,3,7,3),T(3,3,3,3),T(1,2,1,2),T(2,7,2,7),
+    T(4,7,4,7),T(3,7,3,7),T(6,7,6,7),T(3,5,3,5),T(1,9,1,9)};
+  std::cout << "Initialize map ///////////////////////////////////////////////" << std::endl;
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
   }
   std::cout << map.to_string() << std::endl;
-  /*
-  std::cout << "try_emplace() for first initialize" << std::endl;
-  auto citm = map.map_cbegin();
-  citm = map.map_cbegin();
-  auto itm = map.map_begin();
-  auto itl = map.list_begin();
-  std::cout << "map key" << std::endl;
-  std::cout << itm->key().to_string() << std::endl;
-  std::cout << "list key" << std::endl;
-  std::cout << itl->key().to_string() << std::endl;
-  map.hard_clear();
-  for(int i = 0; i < input.size(); i++) {
-    map.try_emplace(input[i].k,input[i].v);
-  }
-  std::cout << "try_emplace() initialize after hard_clear()" << std::endl;
-  std::cout << map.to_string() << std::endl;
-
+  std::cout << "Clear and ReInitialize map less elements and new ////////////////" << std::endl;
+  input = {T(3,5,3,5),T(1,9,1,9),T(7,3,7,3),T(3,7,3,7),
+    T(3,3,3,3),T(1,2,1,2),T(2,7,2,7),T(5,1,5,1)};
   map.clear();
-  for(int i = 0; i < input.size()-2; i++) {
-    map.try_emplace(input[i].k,input[i].v);
-  }
-  std::cout << "try_emplace() after clear" << std::endl;
-  std::cout << map.to_string() << std::endl;
-
-  map.clear();
-  input = {T(77,11,77,11),T(7,3,7,3),T(3,3,3,3),T(33,34,33,34),T(13,32,13,32),
-    T(2,7,2,7)};
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
   }
-  std::cout << "try_emplace() after clear with new elements" << std::endl;
   std::cout << map.to_string() << std::endl;
-
-  std::cout << "test constantness" << std::endl;
-  test_constantness(map);
-  std::cout << map.to_string() << std::endl;
-  */
   return 0;
 }

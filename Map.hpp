@@ -256,6 +256,7 @@ class Map {
   std::string to_string() const;
   MapIterator map_find(const Key& key);
   void move2Front(MapIterator& it);
+  void move2Front(ListIterator& it);
   MapIterator rawInsert(const Key& key, const Val& val);
   void reInsertKey(MapIterator& it, const Key& key);
   void reInsertKey(MapIterator& it0, const Key& key0,
@@ -382,29 +383,32 @@ Map<Key, Val, Compare>::
 to_string() const {
   auto citm = map_cbegin();
   auto citl = ConstListIterator(list_.begin());
-  std::ostringstream tmp ;
-  tmp.precision(3);
-  tmp << std::fixed << std::setprecision(2);
-  tmp << "clr_=" << clr_;
-  tmp << " list_.begin() -> ";
-  tmp << citl->key().to_string() << " ";
-  tmp << (*citl).val().to_string() << " ";
-  tmp << std::to_string(citl->clr()) << "\n";
-  tmp << "set_.size()=" << std::to_string(set_.size());
-  tmp << " | ";
-  tmp << "list_.size()=" << std::to_string(list_.size());
-  tmp << "\n";
+  std::string tmp = "";
+  auto citlb = ConstListIterator(list_begin_);
+  tmp += "clr_=" + std::to_string(clr_)+"\n";
+  tmp += "list_begin_ -> ";
+  tmp += citlb->key().to_string() + " ";
+  tmp += (*citlb).val().to_string() + " ";
+  tmp += std::to_string(citlb->clr()) + "\n";
+  tmp += "list_.begin() -> ";
+  tmp += citl->key().to_string() + " ";
+  tmp += (*citl).val().to_string() + " ";
+  tmp += std::to_string(citl->clr()) + "\n";
+  tmp += "set_.size()=" + std::to_string(set_.size());
+  tmp += " | ";
+  tmp += "list_.size()=" + std::to_string(list_.size());
+  tmp += "\n";
   citl++;
   while (citm != map_cend() && citl_ != list_cend()) {
-    tmp << (*citm).val().to_string() << " ";
-    tmp << citm->val().to_string() << " ";
-    tmp << std::to_string((*citm).clr()) << " | ";
-    tmp << citl->key().to_string() << " ";
-    tmp << citl->val().to_string() << " ";
-    tmp << std::to_string(citl->clr()) << "\n";
+    tmp += (*citm).key().to_string() + " ";
+    tmp += citm->val().to_string() + " ";
+    tmp += std::to_string((*citm).clr()) + " | ";
+    tmp += citl->key().to_string() + " ";
+    tmp += citl->val().to_string() + " ";
+    tmp += std::to_string(citl->clr()) + "\n";
     citm++; citl++;
   }
-  return tmp.str();
+  return tmp;
 }
 
 template<class Key, class Val, class Compare>
@@ -422,7 +426,15 @@ void
 Map<Key, Val, Compare>::
 move2Front(MapIterator& itm) {
   list_.splice(list_begin_.It(), list_, *(itm.It()));
-  list_begin_ = itl_;
+  list_begin_ = *(itm.It());
+}
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+move2Front(ListIterator& itl) {
+  list_.splice(list_begin_.It(), list_, (itl.It()));
+  list_begin_ = itl;
 }
 
 template<class Key, class Val, class Compare>
@@ -439,7 +451,6 @@ rawInsert(const Key& key, const Val& val) {
   set_.insert(itl);
   itm_ = map_find(key);
   list_begin_ = ListIterator(itl);
-  std::cout << to_string() << std::endl;
   return itm_;
 }
 
@@ -578,6 +589,7 @@ Map<Key, Val, Compare>::
 MapIterator
 Map<Key, Val, Compare>::
 try_emplace(const Key& key, const Val& val) {
+  std::cout << to_string() << std::endl;
   itm_ = map_find(key);
   if (itm_ != map_end()) {
     std::cout << "key exists" << std::endl;
@@ -596,11 +608,11 @@ try_emplace(const Key& key, const Val& val) {
     itl_.It() = list_.end(); itl_--;
     if (itl_->clr() != clr_) {
       std::cout << "a key is reusable" << std::endl;
+      move2Front(itl_);
       itm_ = map_find(itl_->key());
       reInsertKey(itm_, key);
       itl_->val() = val;
       itl_.setClr(clr_);
-      move2Front(itm_);
       itm_.is_valid_ = true;
     } else {
       std::cout << "no key is reusable" << std::endl;
