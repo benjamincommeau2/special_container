@@ -105,7 +105,7 @@ int main() {
   citm = map.map_cbegin();
   auto itm = map.map_begin();
   std::cout << map.to_string() << std::endl;
-
+  /*
   map.hard_clear();
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
@@ -132,5 +132,6 @@ int main() {
   std::cout << "test constantness" << std::endl;
   test_constantness(map);
   std::cout << map.to_string() << std::endl;
+  */
   return 0;
 }

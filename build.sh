@@ -1,7 +1,7 @@
 clear
 #gcc opt="O3" removes performance timing loops, compliant high optimization
 #gcc opt="O1" allows performance timing loops
-script=testInner
+script=testMap
 error=compile.cerr
 execo=myexec.o
 > $error
