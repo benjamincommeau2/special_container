@@ -234,11 +234,11 @@ class Map {
   /* //////////////////////////////////////////////////////////////
   Check if Constant Iterators are valid
   */ //////////////////////////////////////////////////////////////
-  /*
   static_assert(std::is_copy_constructible_v<ConstListIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstListIterator>);
   static_assert(std::is_copy_constructible_v<ConstMapIterator>);
   static_assert(std::is_trivially_copy_constructible_v<ConstMapIterator>);
+  /*
   */
   /* //////////////////////////////////////////////////////////////
   Implicit Methods Definitions without Iterators
@@ -264,8 +264,7 @@ class Map {
   MapIterator map_lower_bound(const Key& key);
   MapIterator map_upper_bound(const Key& key);
   ConstMapIterator map_clower_bound (const Key& key) const;
-  ConstMapIterator
-  map_cupper_bound (const Key& key) const;
+  ConstMapIterator map_cupper_bound (const Key& key) const;
   ConstMapIterator map_cbegin() const;
   ConstMapIterator map_cend() const;
   MapIterator map_begin(); 
@@ -281,8 +280,9 @@ class Map {
   */ //////////////////////////////////////////////////////////////
   Clr clr_ = 1;
   Clr clr_max_ = UINT64_MAX;
-  mutable SetT set_;
+  SetT set_; 
   mutable ListT list_ = {T()};
+    /* "list_" is made mutable to prevent const_iterator from spawning */
   mutable ListT list_temp_ = {T()};
   /* //////////////////////////////////////////////////////////////
   Private Variable using Iterator Class
@@ -462,6 +462,7 @@ reInsertKey(MapIterator& it, const Key& key) {
   (*nh.value()).key_ = key;
   set_.insert(std::move(nh));
   it = map_find(key);
+  it.setClr(clr_);
 }
 
 template<class Key, class Val, class Compare>
@@ -469,14 +470,16 @@ void
 Map<Key, Val, Compare>::
 reInsertKey(MapIterator& it0, const Key& key0,
   MapIterator& it1, const Key& key1) {
-  auto nh0 = set_.extract(it0.it_);
-  auto nh1 = set_.extract(it1.it_);
+  auto nh0 = set_.extract(it0.It());
+  auto nh1 = set_.extract(it1.It());
   (*nh0.value()).key_ = key0;
   (*nh1.value()).key_ = key1;
   set_.insert(std::move(nh0));
   set_.insert(std::move(nh1));
   it0 = map_find(key0);
   it1 = map_find(key1);
+  it0.setClr(clr_);
+  it1.setClr(clr_);
 }
 
 template<class Key, class Val, class Compare>
@@ -589,25 +592,25 @@ Map<Key, Val, Compare>::
 MapIterator
 Map<Key, Val, Compare>::
 try_emplace(const Key& key, const Val& val) {
-  std::cout << to_string() << std::endl;
+  //std::cout << to_string() << std::endl;
   itm_ = map_find(key);
   if (itm_ != map_end()) {
-    std::cout << "key exists" << std::endl;
+    //std::cout << "key exists" << std::endl;
     if (itm_->clr() != clr_) {
-      std::cout << "key is cleared" << std::endl;
+      //std::cout << "key is cleared" << std::endl;
       itm_.setClr(clr_);
       itm_->val() = val;
       move2Front(itm_);
       itm_.is_valid_ = true;
     } else {
-      std::cout << "key is not cleared" << std::endl;
+      //std::cout << "key is not cleared" << std::endl;
       itm_.is_valid_ = false;
     }
   } else {
-    std::cout << "key does not exist" << std::endl;
+    //std::cout << "key does not exist" << std::endl;
     itl_.It() = list_.end(); itl_--;
     if (itl_->clr() != clr_) {
-      std::cout << "a key is reusable" << std::endl;
+      //std::cout << "a key is reusable" << std::endl;
       move2Front(itl_);
       itm_ = map_find(itl_->key());
       reInsertKey(itm_, key);
@@ -615,7 +618,7 @@ try_emplace(const Key& key, const Val& val) {
       itl_.setClr(clr_);
       itm_.is_valid_ = true;
     } else {
-      std::cout << "no key is reusable" << std::endl;
+      //std::cout << "no key is reusable" << std::endl;
       itm_ = rawInsert(key, val);
       itm_.is_valid_ = true;
     }

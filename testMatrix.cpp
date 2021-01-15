@@ -66,6 +66,7 @@ struct T {
   double i() {return v.imag();}
 };
 
+
 void test_transpose() {
   Matrix mat;
   std::vector<T> t = {T(1,1,1,1),T(1,2,1,2),T(2,2,2,2),T(2,1,2,1),T(3,4,3,4),
@@ -74,19 +75,25 @@ void test_transpose() {
     //std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
     mat.add(t[i].x,t[i].y,t[i].v);
   }
-  mat.clear();
+  mat.map_.clear();
   std::cout << "clear" << std::endl;
-  std::cout << mat.to_string() << std::endl;
+  std::cout << mat.map_.to_string() << std::endl;
   for(uint32_t i = 0; i<= 6; i++) {
     //std::cout << "t[i].v=" << t[i].v.real() << " " << t[i].v.imag() << std::endl;
     mat.add(t[i].x,t[i].y,t[i].v);
   }
-  std::cout << mat.to_string() << std::endl;
+  std::cout << mat.map_.to_string() << std::endl;
   std::cout << "start transpose" << std::endl;
-  mat.transpose2();
-  std::cout << mat.to_string() << std::endl;
-  std::cout << "mat.getClr()=" << mat.getClr() << std::endl;
+  mat.transpose_emplace();
+  std::cout << mat.map_.to_string() << std::endl;
+  std::cout << "mat.map_.getClr()=" << mat.map_.getClr() << std::endl;
 }
+
+int main() {
+  test_transpose();
+  return 0;
+}
+/*
 
 void test_ABteC() {
   Matrix A;
@@ -168,8 +175,4 @@ void test_ABteC() {
   }
 
 }
-
-int main() {
-  test_transpose();
-  return 0;
-}
+*/

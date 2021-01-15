@@ -53,14 +53,17 @@ class Timer {
 };
 
 template<class K, class V>
-void test_constantness(Map<K,V>& map) {
-  auto it = map.map_cbegin();
-  std::cout << map.to_string() << std::endl;
-  //std::cout << it->val().to_string() << std::endl;
-  //auto v = (*it).val();
- // std::cout << (*it).val().to_string() << std::endl;
-  //(*it).val()=0;
-  //it->val()=0;
+void test_constantness(const Map<K,V>& map) {
+  //auto itm = map.map_begin(); // fails constant qualifier check
+  auto itm = map.map_cbegin();
+  std::cout << "itm->val()=" << itm->val().to_string() << std::endl;
+  itm->val() = 69; // compiles, but does not modify
+  std::cout << "itm->val()=" << itm->val().to_string() << std::endl;
+  auto itl = map.list_cbegin();
+  //auto itl = map.list_begin(); // fails constant qualifier check
+  std::cout << "itl->val()=" << itl->val().to_string() << std::endl;
+  itl->val() = 69; // compiles, but does not modify
+  std::cout << "itl->val()=" << itl->val().to_string() << std::endl;
 }
 
 int main() {
@@ -107,11 +110,17 @@ int main() {
   std::cout << map.to_string() << std::endl;
   std::cout << "Clear and ReInitialize map less elements and new ////////////////" << std::endl;
   input = {T(3,5,3,5),T(1,9,1,9),T(7,3,7,3),T(3,7,3,7),
-    T(3,3,3,3),T(1,2,1,2),T(2,7,2,7),T(5,1,5,1)};
+    T(3,3,3,3),T(1,2,1,2),T(2,7,2,7),T(2,7,2,7),T(5,1,5,1),T(2,2,2,2),T(2,1,2,1)};
   map.clear();
   for(int i = 0; i < input.size(); i++) {
     map.try_emplace(input[i].k,input[i].v);
   }
   std::cout << map.to_string() << std::endl;
+  test_constantness(map);
+  std::cout << map.to_string() << std::endl;
+  auto itm = map.map_begin();
+  //itm.It(); // error: is private
+  //itm.setKey(K(0,0)); // error: is private
+  //itm.setClr(1); // error: is private
   return 0;
 }
