@@ -122,5 +122,8 @@ int main() {
   //itm.It(); // error: is private
   //itm.setKey(K(0,0)); // error: is private
   //itm.setClr(1); // error: is private
+  std::cout << "Test sort_list" << std::endl;
+  map.sort_list();
+  std::cout << map.to_string() << std::endl;
   return 0;
 }

@@ -74,6 +74,8 @@ class Matrix {
   */ //////////////////////////////////////////////////////////////
   void add(Index x, Index y, Value v);
   void transpose_emplace();
+  void pesABt(const Value& s, Matrix& A, Matrix & B);
+  Value getCoeff(Index x, Index y);
 
 
   Map<K,V> map_;
@@ -84,6 +86,18 @@ class Matrix {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods
 */ //////////////////////////////////////////////////////////////
+
+Matrix::
+Value
+Matrix::
+getCoeff(Matrix::Index x, Matrix::Index y) {
+  auto itm = map_.map_find(K(x,y));
+  if(itm != map_.map_end()) {
+    return itm->val().v_;
+  } else {
+    return 0;
+  }
+}
 
 void
 Matrix::
@@ -111,14 +125,60 @@ transpose_emplace() {
     itm0 = map_.map_find(K(x,y));
     itm1 = map_.map_find(K(y,x));
     if(itm1 != map_.map_end() && x != y) {
-      // std::cout << "transposed key exists" << std::endl;
+      //std::cout << "transposed key exists" << std::endl;
       map_.reInsertKey(itm0, K(y,x), itm1, K(x,y));
       map_.move2Front(itm1);
     } else {
-      // std::cout << "transposed key does not exist" << std::endl;
+      //std::cout << "transposed key does not exist" << std::endl;
       map_.reInsertKey(itm0, K(y,x));
     }
     itl++;
+  }
+}
+
+void 
+Matrix::
+pesABt(const Value& s, Matrix& A, Matrix & B) {
+  std::cout << "start pesABt" << std::endl;
+  A.map_.sort_list();
+  auto iA = A.map_.list_begin();
+  auto iA_old = A.map_.list_begin();
+  Matrix::Index xA;
+  Matrix::Index yA;
+  Matrix::Index vA;
+
+  B.map_.sort_list();
+  auto iB = B.map_.list_begin();
+  auto iB_old = B.map_.list_begin();
+  Matrix::Index xB;
+  Matrix::Index yB;
+  Matrix::Index vB;
+
+  Value res;
+
+  iA = A.map_.list_begin();
+  while(iA != A.map_.list_end()) {
+    xA = iA->key().x_;
+    iA_old = iA;
+    iB = B.map_.list_begin();
+    while(iB != B.map_.list_end()) {
+      xB = iB->key().x_;
+      iA = iA_old;
+      res = 0;
+      while(xA == iA->key().x_ && xB == iB->key().x_ 
+        && iA != A.map_.list_end() && iB != B.map_.list_end()) {
+        yA = iA->key().y_; yB = iB->key().y_;
+        std::cout << "yA,yB=" << yA << "," << yB << std::endl;
+        if(yA == yB) {
+          res += iA->val().v_ * iB->val().v_;
+          iA++; iB++;
+        } else if(yA < yB) {iA++;} else {iB++;}
+      }
+      std::cout << "res=" << res.real() << " " << res.imag() << std::endl;
+      add(xA, xB, s*res);
+      while(xB == iB->key().x_ && iB != B.map_.list_end()) {iB++;}
+    }
+    while(xA == iA->key().x_ && iA != A.map_.list_end()) {iA++;}
   }
 }
 

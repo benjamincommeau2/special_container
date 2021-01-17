@@ -89,13 +89,7 @@ void test_transpose() {
   std::cout << "mat.map_.getClr()=" << mat.map_.getClr() << std::endl;
 }
 
-int main() {
-  test_transpose();
-  return 0;
-}
-/*
-
-void test_ABteC() {
+void test_pesABt() {
   Matrix A;
   std::vector<T> tA = {
   T(0, 0,        0.9031785237401092,0),
@@ -110,7 +104,7 @@ void test_ABteC() {
     A.add(tA[i].x,tA[i].y,tA[i].v);
   }
   std::cout << "A=" << std::endl;
-  std::cout << A.to_string() << std::endl;
+  std::cout << A.map_.to_string() << std::endl;
   Matrix B;
   std::vector<T> tB = {
   T(0, 0 ,       0.6743304229389547 ,0),
@@ -125,7 +119,7 @@ void test_ABteC() {
     B.add(tB[i].x,tB[i].y,tB[i].v);
   }
   std::cout << "B=" << std::endl;
-  std::cout << B.to_string() << std::endl;
+  std::cout << B.map_.to_string() << std::endl;
   Matrix C;
   std::vector<T> tC = {
   T(0, 0 ,       0.9938459114290126,0),
@@ -146,15 +140,15 @@ void test_ABteC() {
     C.add(tC[i].x,tC[i].y,tC[i].v);
   }
   std::cout << "C=" << std::endl;
-  std::cout << C.to_string() << std::endl;
-  B.transpose();
+  std::cout << C.map_.to_string() << std::endl;
+  B.transpose_emplace();
   std::cout << "Transposed B" << std::endl;
   Matrix Cn;
-  Cn.ABteC(A,B,Cn);
+  Cn.pesABt(1,A,B);
   std::cout << "Cn=" << std::endl;
-  std::cout << Cn.to_string() << std::endl;
+  std::cout << Cn.map_.to_string() << std::endl;
   std::cout << "C=" << std::endl;
-  std::cout << C.to_string() << std::endl;
+  std::cout << C.map_.to_string() << std::endl;
 
   bool is_error = false;
   for(uint32_t x = 0; x < 4; x++) {
@@ -175,4 +169,12 @@ void test_ABteC() {
   }
 
 }
+
+int main() {
+ // test_transpose();
+  test_pesABt();
+  return 0;
+}
+/*
+
 */

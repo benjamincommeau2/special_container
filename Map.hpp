@@ -274,9 +274,10 @@ class Map {
   ListIterator list_begin();
   ListIterator list_end();
   MapIterator try_emplace(const Key& key, const Val& val);
+  void sort_list();
  private:
   /* //////////////////////////////////////////////////////////////
-  Private Variables
+  Private Variables without using Iterator Class
   */ //////////////////////////////////////////////////////////////
   Clr clr_ = 1;
   Clr clr_max_ = UINT64_MAX;
@@ -298,6 +299,19 @@ class Map {
 /* //////////////////////////////////////////////////////////////
 Explicit Methods without Iterators
 */ //////////////////////////////////////////////////////////////
+
+template<class Key, class Val, class Compare>
+void
+Map<Key, Val, Compare>::
+sort_list() {
+  auto itm = map_end();
+  while(true) {
+    itm--;
+    //std::cout << itm->key().to_string() << std::endl;
+    if(itm->clr() == clr_) {move2Front(itm);}
+    if(itm == map_begin()) {break;}
+  }
+}
 
 template<class Key, class Val, class Compare>
 void
