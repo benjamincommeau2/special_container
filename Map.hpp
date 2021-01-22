@@ -334,6 +334,7 @@ flatten_clear() {
     it++;
   }
   clr_ = 1;
+  list_.begin()->clr_ = clr_;
 }
 
 template<class Key, class Val, class Compare>
@@ -372,6 +373,7 @@ clear() {
       it++;
     }
   }
+  list_.begin()->clr_ = clr_;
 }
 
 template<class Key, class Val, class Compare>

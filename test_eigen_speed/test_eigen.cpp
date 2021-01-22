@@ -49,6 +49,18 @@ void printMEM() {
   auto sys = system("ps -eo cmd,%mem,%cpu --sort=-%mem | head -n 2 | tail -n 1");
 }
 
+void print_sparse(const std::string& s,
+  const Eigen::SparseMatrix<std::complex<double>>& mat, Matrix& A) {
+  std::cout << s << std::endl;
+  for (int k=0; k<mat.outerSize(); ++k)
+    for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator it(mat,k);
+      it; ++it) {
+      std::cout << it.col() << " " << it.row() << " " << it.value() << std::endl;
+    }
+    std::cout << std::endl;
+  std::cout << A.map_.to_string() << std::endl;
+}
+
 void
 build_sparse(const uint64_t& dim, const uint64_t& n, TriVec& tri_vec,
   std::default_random_engine& rand_gen, 
@@ -88,22 +100,13 @@ Matrix& M) {
   it = tri_vec.begin();
   std::advance(it,n);
   m.setFromTriplets(tri_vec.begin(), it);
-  M.clear();
+  M.map_.clear();
   for(uint32_t i = 0; i < n; i++) {
     M.add(tri_vec[i].col(),tri_vec[i].row(),tri_vec[i].value());
   }
+  //print_sparse("m=",m,M);
 }
 
-void print_sparse(const std::string& s,
-  const Eigen::SparseMatrix<std::complex<double>>& mat) {
-  std::cout << s << std::endl;
-  for (int k=0; k<mat.outerSize(); ++k)
-    for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator it(mat,k);
-      it; ++it) {
-      std::cout << it.row() << " " << it.col() << " " << it.value() << std::endl;
-    }
-    std::cout << std::endl;
-}
 
 struct keep_complex_zero {
   bool operator() (const int& row, const int& col,
@@ -141,8 +144,6 @@ double compare_objects(Eigen::SparseMatrix<std::complex<double>>& c, Matrix& C) 
       it_c(c,k_c); it_c; ++it_c) {
       v += std::abs(C.getCoeff(it_c.col(),it_c.row()) - it_c.value());
     }
-  //print_sparse("b=",b);
-  //std::cout << 
   return v;
 }
 
@@ -158,8 +159,8 @@ void test_trad_mult() {
   Matrix B;
   Matrix C;
   TriVec tri_vec;
-  double exp = 0.5;
-  uint64_t max_qubits = 13;
+  double exp = 2;
+  uint64_t max_qubits = 10;
   uint64_t max_dim = 1<<max_qubits;
   uint64_t max_n = uint64_t(pow((max_dim),exp));
   try{
@@ -178,6 +179,7 @@ void test_trad_mult() {
   std::vector<double> times_build;
   std::vector<double> a_size;
   std::vector<double> c_size;
+  std::vector<double> times_sort;
   std::vector<double> times_allocM;
   std::vector<double> times_multM;
   std::vector<double> times_mult_2M;
@@ -189,7 +191,9 @@ void test_trad_mult() {
     std::cout << "q=" << q << " dim=" << dim << " n=" << n << " dim^2="
       << dim*dim << std::endl;
     stop_watch.start();
+    //std::cout << "start build A" << std::endl;
     build_sparse(dim,n, tri_vec, rand_gen, urd, a, A);
+    //std::cout << "start build B" << std::endl;
     build_sparse(dim,n, tri_vec, rand_gen, urd, b, B);
     times_build.push_back(stop_watch.get_time());
     //////////////////////////////////////////
@@ -197,34 +201,36 @@ void test_trad_mult() {
     c.resize(dim,dim); //set to zero as well
     times_alloc.push_back(stop_watch.get_time());
     stop_watch.start();
-    //c += a*b;
     c.setZero();
-    eigen_oper_mult(a,b,c);
+    c += a*b;
     times_mult.push_back(stop_watch.get_time());
     c_size.push_back(log2(double(c.nonZeros())/double(dim*dim)));
     a_size.push_back(log2(double(a.nonZeros())/double(dim*dim)));
     stop_watch.start();
-    //c += a*b;
     c.setZero();
-    eigen_oper_mult(a,b,c);
+    c += a*b;
     times_mult_2.push_back(stop_watch.get_time());
     /////////////////////////////////////////////
     stop_watch.start();
-    C.clear();
+    A.map_.sort_list(); B.map_.sort_list();
+    times_sort.push_back(stop_watch.get_time());
+    stop_watch.start();
+    C.map_.clear();
     times_allocM.push_back(stop_watch.get_time());
     stop_watch.start();
-    //B.transpose();
-    //C.ABteC(A,B,C);
-    C.AoBeC(A,B,C);
+    //std::cout << "start transpose" << std::endl;
+    A.transpose_emplace();
+    //std::cout << "start pesABt" << std::endl;
+    //C.pesABt(1,B,A);
     times_multM.push_back(stop_watch.get_time());
     stop_watch.start();
-    C.clear();
-    //C.ABteC(A,B,C);
-    C.AoBeC(A,B,C);
+    C.map_.clear();
+    //std::cout << "start pesABt 2nd" << std::endl;
+    //C.pesABt(1,B,A);
     times_mult_2M.push_back(stop_watch.get_time());
     ////////////////////////////////////////////////
     printMEM();
-    std::cout << compare_objects(c,C) << std::endl;
+    std::cout << "compare_objects(c,C)=" << compare_objects(c,C) << std::endl;
   }
   
   std::cout << std::fixed << std::setprecision(3)
@@ -234,6 +240,7 @@ void test_trad_mult() {
     << std::setw(6) << times_mult_2[0] << " "
     << std::setw(6) << " "
     << std::setw(6) << " "
+    << std::setw(6) << times_sort[0] << " "
     << std::setw(6) << times_allocM[0] << " "
     << std::setw(6) << times_multM[0] << " "
     << std::setw(6) << times_mult_2M[0] << " "
@@ -247,6 +254,7 @@ void test_trad_mult() {
               << std::setw(6) << times_mult_2[i+1] - times_mult_2[i] << " "
               << std::setw(6) << a_size[i] << " "
               << std::setw(6) << c_size[i] << " "
+              << std::setw(6) << times_sort[i+1]-times_sort[i] << " "
               << std::setw(6) << times_allocM[i+1]-times_allocM[i] << " "
               << std::setw(6) << times_multM[i+1]-times_multM[i] << " "
               << std::setw(6) << times_mult_2M[i+1]-times_mult_2M[i] << " "
@@ -261,6 +269,7 @@ void test_trad_mult() {
     << std::setw(6) << times_mult_2[end] << " "
     << std::setw(6) << a_size[end] << " "
     << std::setw(6) << c_size[end] << " "
+    << std::setw(6) << times_sort[end] << " "
     << std::setw(6) << times_allocM[end] << " "
     << std::setw(6) << times_multM[end] << " "
     << std::setw(6) << times_mult_2M[end] << " "

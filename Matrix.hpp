@@ -139,7 +139,6 @@ transpose_emplace() {
 void 
 Matrix::
 pesABt(const Value& s, Matrix& A, Matrix & B) {
-  std::cout << "start pesABt" << std::endl;
   A.map_.sort_list();
   auto iA = A.map_.list_begin();
   auto iA_old = A.map_.list_begin();
@@ -168,13 +167,11 @@ pesABt(const Value& s, Matrix& A, Matrix & B) {
       while(xA == iA->key().x_ && xB == iB->key().x_ 
         && iA != A.map_.list_end() && iB != B.map_.list_end()) {
         yA = iA->key().y_; yB = iB->key().y_;
-        std::cout << "yA,yB=" << yA << "," << yB << std::endl;
         if(yA == yB) {
           res += iA->val().v_ * iB->val().v_;
           iA++; iB++;
         } else if(yA < yB) {iA++;} else {iB++;}
       }
-      std::cout << "res=" << res.real() << " " << res.imag() << std::endl;
       add(xA, xB, s*res);
       while(xB == iB->key().x_ && iB != B.map_.list_end()) {iB++;}
     }
