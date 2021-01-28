@@ -1,17 +1,14 @@
 clear
-opt="O1" # allows performance timing loops
-opt="O3" # removes performance timing loops, compliant high optimization
 script=test_eigen
-nodebug="-DNDEBUG"
-nodebug=""
 eigen=~/code/eigen3.3.9/eigen-3.3.9
-echo $eigen
 cerr=compile.errors.cerr
-rerr=runs.errors.cerr
+rerr=runs.errors.txt
 > $cerr
 > $rerr
-g++ -static-libgcc -I $eigen $nodebug -L/usr/lib/gcc/x86_64-linux-gnu/10 -lstdc++ -std=c++20 -$opt -c $script.cpp 2>&1 | tee -a $cerr
-g++ -shared-libgcc -I $eigen $nodebug -L/usr/lib/gcc/x86_64-linux-gnu/10 -lstdc++ -std=c++20 -$opt -o myexec.o $script.o 2>&1 | tee -a $cerr
+
+opt="-std=c++20 -O3 -DNDEBUG -finline-functions -Wno-inline -ftemplate-depth-128 -I $eigen -fdiagnostics-show-template-tree -fmessage-length=80"
+g++ $opt -c $script.cpp 2>&1 | tee -a $cerr
+g++ $opt -o myexec.o $script.o 2>&1 | tee -a $cerr
 if [[ -s $cerr ]] ; then
   vi $cerr
   exit

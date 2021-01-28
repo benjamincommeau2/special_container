@@ -1,182 +1,282 @@
-/*
-  Copyright Benjamin Commeau
-
-Use CamelCase for all names. Start types (such as classes, structs, and typedefs) with a capital letter, other names (functions, variables) with a lowercase letter. You may use an all-lowercase name with underscores if your class closely resembles an external construct (e.g., a standard library construct) named that way.
-
-(1) C++ interfaces are named with a Interface suffix, and abstract base classes with an Abstract prefix.
-(2) Member variables are named with a trailing underscore.
-(3) Accessors for a variable foo_ are named foo() and setFoo().
-(4) Global variables are named with a g_ prefix.
-(5) Static class variables are named with a s_ prefix.
-(6) Global constants are often named with a c_ prefix.
-(7) If the main responsibility of a file is to implement a particular class, then the name of the file should match that class, except for possible abbreviations to avoid repetition in file names (e.g., if all classes within a module start with the module name, omitting or abbreviating the module name is OK). Currently, all source file names are lowercase, but this casing difference should be the only difference.
-
-The rationale for the trailing underscore and the global/static prefixes is that it is immediately clear whether a variable referenced in a method is local to the function or has wider scope, improving the readability of the code.
-*/
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 
 #include <algorithm>
 #include <iostream>
-#include <map>
-#include <list>
-#include <set>
-#include <list>
-#include <cstdio>
-#include <complex>
-#include <exception>
-#include <memory>
-#include <chrono>
-#include <cmath>
-#include <string>
 #include <random>
-#include "Map.hpp"
-#include <sstream>
-#include <iomanip>
+#include <chrono>
+#include <set>
+#include <unordered_set>
 
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
 class Matrix {
  public:
-  typedef uint32_t Index;
-  /* //////////////////////////////////////////////////////////////
-  Key
-  */ //////////////////////////////////////////////////////////////
-  struct K {
-    Index x_; Index y_;
-    K() {}
-    K(const Index& x, const Index& y) { x_ = x; y_ = y; } 
-    std::string to_string() {
-      return "("+std::to_string(x_)+","+std::to_string(y_)+")";
-    }
-    bool operator <(const K& k) const {
-      return x_ != k.x_ ? x_ < k.x_ : y_ < k.y_;
-    }
-  };
-  /* //////////////////////////////////////////////////////////////
-  Value
-  */ //////////////////////////////////////////////////////////////
-
-  typedef std::complex<double> Value;
-  struct V {
-    Value v_;
-    V() {}
-    V(const Value& v) {v_ = v;}
-    std::string to_string() {
-      std::stringstream stream;
-      stream << std::fixed << std::setprecision(2);
-      stream << "(" << (v_.real()) << ","
-        << (v_.imag()) << ")";
-      return stream.str();
+  /* ///////////////////////////////////////////////////////////////////
+  basic types
+  */ ///////////////////////////////////////////////////////////////////
+  using Index = uint32_t;
+  using Value = std::complex<double>;
+  /* ///////////////////////////////////////////////////////////////////
+  type T to store in container
+  */ ///////////////////////////////////////////////////////////////////
+  class T {
+   friend class Matrix;
+   public:
+    Index x_; Index y_; mutable Value v_;
+    T() {}
+    T(const Index& x, const Index& y, const Value& v ) : x_(x), y_(y), v_(v) {}
+    std::string to_string() const {
+      std::ostringstream oss;
+      oss.precision(2);
+      oss << std::fixed ;
+      oss << "(" << x_ << "," << y_ << ")" << " ";
+      oss << "(" << v_.real() << "," << v_.imag() << ")";
+      return oss.str();
     }
   };
-
-  /* //////////////////////////////////////////////////////////////
-  Methods
-  */ //////////////////////////////////////////////////////////////
-  void add(Index x, Index y, Value v);
-  void transpose_emplace();
-  void pesABt(const Value& s, Matrix& A, Matrix & B);
-  Value getCoeff(Index x, Index y);
-
-
-  Map<K,V> map_;
- private:
+  /* ///////////////////////////////////////////////////////////////////
+  Tags
+  */ ///////////////////////////////////////////////////////////////////
+  struct order_xy {};
+  struct order_yx {};
+  struct random_access {};
+  /* ///////////////////////////////////////////////////////////////////
+  Type for Boost's Multi-Index Container
+  */ ///////////////////////////////////////////////////////////////////
+  using Container = boost::multi_index_container<
+    T, // the data type stored
+    boost::multi_index::indexed_by<
+      boost::multi_index::ordered_unique<
+        boost::multi_index::tag<order_xy>,
+        boost::multi_index::composite_key<
+          T,
+          boost::multi_index::member<T,Index,&T::x_>,
+          boost::multi_index::member<T,Index,&T::y_>
+        >,
+        boost::multi_index::composite_key_compare<
+          std::less<Index>,
+          std::less<Index>
+        >
+      >,
+      boost::multi_index::ordered_unique<
+        boost::multi_index::tag<order_yx>,
+        boost::multi_index::composite_key<
+          T,
+          boost::multi_index::member<T,Index,&T::y_>,
+          boost::multi_index::member<T,Index,&T::x_>
+        >,
+        boost::multi_index::composite_key_compare<
+          std::less<Index>,
+          std::less<Index>
+        >
+      >,
+      boost::multi_index::random_access<
+        boost::multi_index::tag<random_access>
+      >
+    >
+  >;
+  /* ///////////////////////////////////////////////////////////////////
+  variables
+  */ ///////////////////////////////////////////////////////////////////
+  Container container_;
   Index index_max_ = UINT32_MAX;
+  /* ///////////////////////////////////////////////////////////////////
+  implicit methods
+  */ ///////////////////////////////////////////////////////////////////
+  void insert(const Matrix::Index& x, const Matrix::Index& y,
+    const Matrix::Value& v);
+  std::string to_string() const;
+  void xy_sort();
+  void yx_sort();
+  Container::index<order_xy>::type::iterator
+    xy_find(const Matrix::Index& x, const Matrix::Index& y);
+  void pesAB(const Value& s, Matrix& A, Matrix& B, bool sort);
+  std::pair< Container::index<random_access>::type::iterator,
+    Container::index<random_access>::type::iterator
+  > random_access_equal_range_xy(const Index& x);
+  std::pair< Container::index<random_access>::type::iterator,
+    Container::index<random_access>::type::iterator
+  > random_access_equal_range_yx(const Index& y);
+  void add(const Index& x, const Index& y, const Value& v, bool sort);
+  Container::index<Matrix::order_xy>::type::iterator
+    xy_begin();
+  Container::index<Matrix::order_yx>::type::iterator
+    yx_begin();
+  Container::index<Matrix::random_access>::type::iterator
+    random_access_begin();
+  Container::index<Matrix::random_access>::type::iterator
+    random_access_end();
+  Value getCoeff(const Index x, const Index y);
+  void clear();
+  void reserve(Index m);
 };
 
-/* //////////////////////////////////////////////////////////////
-Explicit Methods
-*/ //////////////////////////////////////////////////////////////
-
-Matrix::
-Value
-Matrix::
-getCoeff(Matrix::Index x, Matrix::Index y) {
-  auto itm = map_.map_find(K(x,y));
-  if(itm != map_.map_end()) {
-    return itm->val().v_;
-  } else {
-    return 0;
-  }
+/* ///////////////////////////////////////////////////////////////////
+explicit methods
+*/ ///////////////////////////////////////////////////////////////////
+void Matrix::reserve(Index m) {
+  container_.get<random_access>().reserve(m);
 }
 
-void
-Matrix::
-add(Index x, Index y, Value v) {
-  auto itm = map_.map_find(K(x,y));
-  if(itm != map_.map_end() && itm->clr() == map_.getClr()) {
-    itm->val().v_ += v;
-  } else {
-    map_.try_emplace(K(x,y),V(v));
-  }
+void Matrix::clear() {
+  container_.clear();
 }
 
-void 
-Matrix::
-transpose_emplace() {
-  if(map_.getClr() == map_.getClrMax()) {map_.flatten_clear();}
-  auto old_clr = map_.getClr();
-  map_.setClr(old_clr+1);
-  auto itl = map_.list_begin();
-  auto itm0 = map_.map_begin();
-  auto itm1 = map_.map_begin();
-  Index x; Index y;
-  while(itl != map_.list_end() && itl->clr() == old_clr) {
-    x = itl->key().x_; y = itl->key().y_;
-    itm0 = map_.map_find(K(x,y));
-    itm1 = map_.map_find(K(y,x));
-    if(itm1 != map_.map_end() && x != y) {
-      //std::cout << "transposed key exists" << std::endl;
-      map_.reInsertKey(itm0, K(y,x), itm1, K(x,y));
-      map_.move2Front(itm1);
-    } else {
-      //std::cout << "transposed key does not exist" << std::endl;
-      map_.reInsertKey(itm0, K(y,x));
-    }
-    itl++;
-  }
+Matrix::Value Matrix::getCoeff(const Matrix::Index x, const Matrix::Index y) {
+  auto it = xy_find(x,y);
+  return it->v_;
 }
 
-void 
-Matrix::
-pesABt(const Value& s, Matrix& A, Matrix & B) {
-  A.map_.sort_list();
-  auto iA = A.map_.list_begin();
-  auto iA_old = A.map_.list_begin();
-  Matrix::Index xA;
-  Matrix::Index yA;
-  Matrix::Index vA;
+void Matrix::pesAB(const Matrix::Value& s, Matrix& A, Matrix& B, bool sort) {
 
-  B.map_.sort_list();
-  auto iB = B.map_.list_begin();
-  auto iB_old = B.map_.list_begin();
-  Matrix::Index xB;
-  Matrix::Index yB;
-  Matrix::Index vB;
+  if(sort) {
+    A.xy_sort();
+    B.yx_sort();
+  }
 
-  Value res;
+  auto iA = A.random_access_begin();
+  auto iA_old = A.random_access_begin();
+  Index xA;
 
-  iA = A.map_.list_begin();
-  while(iA != A.map_.list_end()) {
-    xA = iA->key().x_;
+  auto iB = B.random_access_begin();
+  Index yB;
+
+  Value v = 0;
+
+  while(iA != A.random_access_end()) {
+    xA = iA->x_;
     iA_old = iA;
-    iB = B.map_.list_begin();
-    while(iB != B.map_.list_end()) {
-      xB = iB->key().x_;
+    iB = B.random_access_begin();
+if(false) {
+    while(iB != B.random_access_end()) {
       iA = iA_old;
-      res = 0;
-      while(xA == iA->key().x_ && xB == iB->key().x_ 
-        && iA != A.map_.list_end() && iB != B.map_.list_end()) {
-        yA = iA->key().y_; yB = iB->key().y_;
-        if(yA == yB) {
-          res += iA->val().v_ * iB->val().v_;
+      yB = iB->y_;
+      v = 0;
+      while(xA == iA->x_ && iA != A.random_access_end()
+        && yB == iB->y_ && iB != B.random_access_end()) {
+        if(iA->y_ == iB->x_) {
+          v += iA->v_ * iB->v_;
           iA++; iB++;
-        } else if(yA < yB) {iA++;} else {iB++;}
+        } else if(iA->y_ < iB->x_) { iA++; } else { iB++; }
       }
-      add(xA, xB, s*res);
-      while(xB == iB->key().x_ && iB != B.map_.list_end()) {iB++;}
+      add(xA, yB, s*v, sort);
+      while(yB == iB->y_ && iB != B.random_access_end()) {iB++;}
     }
-    while(xA == iA->key().x_ && iA != A.map_.list_end()) {iA++;}
+}
+    while(xA == iA->x_ && iA != A.random_access_end()) {iA++;}
   }
 }
 
-#endif
+void Matrix::
+add(const Matrix::Index& x, const Matrix::Index& y, const Matrix::Value& v, bool sort) {
+  auto it = xy_find(x,y);
+  if(it != container_.get<order_xy>().end()) {
+    it->v_ += v;
+  } else {
+    container_.insert(T(x,y,v)); // very time consuming
+  }
+}
+  
+
+std::pair<
+  Matrix::Container::index<Matrix::random_access>::type::iterator,
+  Matrix::Container::index<Matrix::random_access>::type::iterator
+> Matrix::
+random_access_equal_range_xy(const Matrix::Index& x) {
+  std::pair<
+    Matrix::Container::index<Matrix::random_access>::type::iterator,
+    Matrix::Container::index<Matrix::random_access>::type::iterator
+  > res;
+  auto rangeXY = container_.get<order_xy>().equal_range(x);
+  res.first = container_.project<random_access>(rangeXY.first);
+  res.second = container_.project<random_access>(rangeXY.second);
+  return res;
+}
+
+std::pair<
+  Matrix::Container::index<Matrix::random_access>::type::iterator,
+  Matrix::Container::index<Matrix::random_access>::type::iterator
+> Matrix::
+random_access_equal_range_yx(const Matrix::Index& y) {
+  std::pair<
+    Matrix::Container::index<Matrix::random_access>::type::iterator,
+    Matrix::Container::index<Matrix::random_access>::type::iterator
+  > res;
+  auto rangeYX = container_.get<order_yx>().equal_range(y);
+  res.first = container_.project<random_access>(rangeYX.first);
+  res.second = container_.project<random_access>(rangeYX.second);
+  return res;
+}
+
+Matrix::Container::index<Matrix::random_access>::type::iterator
+Matrix::random_access_begin() {
+  return container_.get<random_access>().begin();
+}
+
+Matrix::Container::index<Matrix::random_access>::type::iterator
+Matrix::random_access_end() {
+  return container_.get<random_access>().end();
+}
+
+Matrix::Container::index<Matrix::order_xy>::type::iterator
+Matrix::xy_begin() {
+  return container_.get<order_xy>().begin();
+}
+
+Matrix::Container::index<Matrix::order_yx>::type::iterator
+Matrix::yx_begin() {
+  return container_.get<order_yx>().begin();
+}
+
+Matrix::Container::index<Matrix::order_xy>::type::iterator
+Matrix::xy_find(const Matrix::Index& x, const Matrix::Index& y) {
+  return container_.get<order_xy>().find(std::make_tuple(x,y));
+}
+
+std::string Matrix::to_string() const {
+  auto it_xy = container_.get<order_xy>().cbegin();
+  auto it_yx = container_.get<order_yx>().cbegin();
+  auto it_random_access = container_.get<random_access>().cbegin();
+  std::string tmp = "";
+  tmp += "order_xy | ";
+  tmp += "order_yx | ";
+  tmp += "random_access\n";
+  while(it_xy != container_.get<order_xy>().cend()) {
+    tmp += it_xy->to_string() + " | ";
+    tmp += it_yx->to_string() + " | ";
+    tmp += it_random_access->to_string() + "\n";
+    it_xy++;
+    it_yx++;
+    it_random_access++;
+  }
+  return tmp;
+}
+
+void Matrix::xy_sort() {
+  container_.get<random_access>().rearrange(
+    container_.get<order_xy>().begin()
+  );
+}
+
+void Matrix::yx_sort() {
+  container_.get<random_access>().rearrange(
+    container_.get<order_yx>().begin()
+  );
+}
+
+void Matrix::insert(const Matrix::Index& x, const Matrix::Index& y,
+  const Matrix::Value& v) {
+  container_.insert(T(x,y,v));
+}
+/*
+
+
+
+
+
+
+*/

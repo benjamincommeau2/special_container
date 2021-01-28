@@ -1,2 +1,2 @@
 # special_container
-Start of an interesting project.
+This project is an attempt to design a special container that allows fast sparse matrix multiplication and fast sparse string operator multiplication.

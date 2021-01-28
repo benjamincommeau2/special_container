@@ -50,17 +50,15 @@ void printMEM() {
 }
 
 void print_sparse(const std::string& s,
-  Eigen::SparseMatrix<std::complex<double>>& mat0, Matrix& A) {
-  auto mat = mat0;
-  mat=mat.transpose();
+  const Eigen::SparseMatrix<std::complex<double>>& mat, Matrix& A) {
   std::cout << s << std::endl;
-  for (int k = 0; k < mat.outerSize(); ++k)
+  for (int k=0; k<mat.outerSize(); ++k)
     for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator it(mat,k);
       it; ++it) {
       std::cout << it.col() << " " << it.row() << " " << it.value() << std::endl;
     }
     std::cout << std::endl;
-  std::cout << A.to_string() << std::endl;
+  std::cout << A.map_.to_string() << std::endl;
 }
 
 void
@@ -102,9 +100,9 @@ Matrix& M) {
   it = tri_vec.begin();
   std::advance(it,n);
   m.setFromTriplets(tri_vec.begin(), it);
-  M.clear();
+  M.map_.clear();
   for(uint32_t i = 0; i < n; i++) {
-    M.add(tri_vec[i].row(),tri_vec[i].col(),tri_vec[i].value(),true);
+    M.add(tri_vec[i].col(),tri_vec[i].row(),tri_vec[i].value());
   }
   //print_sparse("m=",m,M);
 }
@@ -123,7 +121,6 @@ void dealloc_sparse(Eigen::SparseMatrix<std::complex<double>>& m) {
   m.makeCompressed();
 }
 
-/*
 void eigen_oper_mult(const Eigen::SparseMatrix<std::complex<double>>& a,
                const Eigen::SparseMatrix<std::complex<double>>& b,
                      Eigen::SparseMatrix<std::complex<double>>& c) {
@@ -139,14 +136,13 @@ void eigen_oper_mult(const Eigen::SparseMatrix<std::complex<double>>& a,
     }
   //std::cout << c.nonZeros() << std::endl;
 }
-*/
 
 double compare_objects(Eigen::SparseMatrix<std::complex<double>>& c, Matrix& C) {
   double v=0;
   for (int k_c=0; k_c<c.outerSize(); ++k_c)
     for (Eigen::SparseMatrix<std::complex<double>>::InnerIterator
       it_c(c,k_c); it_c; ++it_c) {
-      v += std::abs(C.getCoeff(it_c.row(),it_c.col()) - it_c.value());
+      v += std::abs(C.getCoeff(it_c.col(),it_c.row()) - it_c.value());
     }
   return v;
 }
@@ -163,20 +159,14 @@ void test_trad_mult() {
   Matrix B;
   Matrix C;
   TriVec tri_vec;
-  double exp = 2.0;
-  uint64_t min_qubits = 1;
-  uint64_t max_qubits = 11;
+  double exp = 2;
+  uint64_t max_qubits = 10;
   uint64_t max_dim = 1<<max_qubits;
   uint64_t max_n = uint64_t(pow((max_dim),exp));
   try{
     a.reserve(max_n);
     b.reserve(max_n);
     c.reserve(max_dim*max_dim);
-    A.reserve(max_n);
-    B.reserve(max_n);
-    C.reserve(max_dim*max_dim);
-    /*
-    */
     tri_vec = TriVec(max_dim*max_dim);
     tri_vec.resize(tri_vec.capacity());
   } catch (const std::exception& e) {
@@ -195,7 +185,7 @@ void test_trad_mult() {
   std::vector<double> times_mult_2M;
   uint64_t dim;
   uint64_t n;
-  for(uint64_t q = min_qubits; q <= (max_qubits); q++ ) {
+  for(uint64_t q = 1; q <= (max_qubits); q++ ) {
     dim = (1<<q);
     n = uint64_t(pow((dim),exp));
     std::cout << "q=" << q << " dim=" << dim << " n=" << n << " dim^2="
@@ -212,40 +202,35 @@ void test_trad_mult() {
     times_alloc.push_back(stop_watch.get_time());
     stop_watch.start();
     c.setZero();
-    c += 0.5*a*b;
+    c += a*b;
     times_mult.push_back(stop_watch.get_time());
     c_size.push_back(log2(double(c.nonZeros())/double(dim*dim)));
     a_size.push_back(log2(double(a.nonZeros())/double(dim*dim)));
     stop_watch.start();
-    //c.setZero();
-    c += 0.5*a*b;
+    c.setZero();
+    c += a*b;
     times_mult_2.push_back(stop_watch.get_time());
     /////////////////////////////////////////////
     stop_watch.start();
+    A.map_.sort_list(); B.map_.sort_list();
     times_sort.push_back(stop_watch.get_time());
     stop_watch.start();
-    C.clear();
+    C.map_.clear();
     times_allocM.push_back(stop_watch.get_time());
     stop_watch.start();
     //std::cout << "start transpose" << std::endl;
-    //A.transpose_emplace();
+    A.transpose_emplace();
     //std::cout << "start pesABt" << std::endl;
-    C.pesAB(1,A,B,true);
+    //C.pesABt(1,B,A);
     times_multM.push_back(stop_watch.get_time());
-    std::cout << "compare_objects(c,C)=" << compare_objects(c,C) << std::endl;
     stop_watch.start();
-    //C.clear();
+    C.map_.clear();
     //std::cout << "start pesABt 2nd" << std::endl;
-    C.pesAB(1,A,B,false);
+    //C.pesABt(1,B,A);
     times_mult_2M.push_back(stop_watch.get_time());
-    std::cout << "compare_objects(c,C)=" << compare_objects(c,C) << std::endl;
     ////////////////////////////////////////////////
-    /*
-    print_sparse("a=",a,A);
-    print_sparse("b=",b,B);
-    print_sparse("c=",c,C);
-    */
     printMEM();
+    std::cout << "compare_objects(c,C)=" << compare_objects(c,C) << std::endl;
   }
   
   std::cout << std::fixed << std::setprecision(3)
