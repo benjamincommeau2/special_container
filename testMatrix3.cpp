@@ -28,6 +28,32 @@ The rationale for the trailing underscore and the global/static prefixes is that
 #include <random>
 #include <sstream>
 #include "Matrix.hpp"
+/*
+*/
+
+/*
+class Timer {
+ private:
+  std::chrono::time_point<std::chrono::high_resolution_clock>
+    start_ = std::chrono::high_resolution_clock::now();
+  std::chrono::time_point<std::chrono::high_resolution_clock>
+    end_ = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double>
+    duration_ = std::chrono::duration_cast
+    <std::chrono::nanoseconds>(end_-start_);
+ public:
+  void start() {
+    start_ = std::chrono::high_resolution_clock::now();
+  }
+  void stop(std::string statement) {
+    end_ = std::chrono::high_resolution_clock::now();
+    duration_ = std::chrono::duration_cast
+      <std::chrono::nanoseconds>(end_-start_);
+    std::cout << log2(duration_.count()) << " "+statement << std::endl;
+    start_ = std::chrono::high_resolution_clock::now();
+  }
+};
+*/
 
 std::string complex_to_string(const std::complex<double>& v) {
   std::ostringstream oss;
@@ -53,11 +79,10 @@ void test_pesAB() {
   T(0, 3,        0.6984202359093901,0),
   T(3, 2 ,       0.6041319382476973,0)};
   for(uint32_t i = 0; i< tA.size(); i++) {
-    A.insert(tA[i].x,tA[i].y,tA[i].v);
+    A.add(tA[i].x,tA[i].y,tA[i].v);
   }
   std::cout << "A=" << std::endl;
   std::cout << A.to_string() << std::endl;
-  /*
   Matrix B;
   std::vector<T> tB = {
   T(1, 0  ,      0.6723172732412332, 0),
@@ -118,9 +143,8 @@ void test_pesAB() {
   } else {
     std::cout << "Failed pesABt test." << std::endl; 
   }
-  */
+
 }
-/*
 void test_stuff() {
   class T {
    public:
@@ -130,12 +154,14 @@ void test_stuff() {
   };
   std::vector<T> input = {T(1,2,1,2),T(3,1,3,1),T(3,4,3,4),T(3,3,3,3),T(1,1,1,1),
     T(7,1,7,1),T(3,7,3,7),T(2,5,2,5),T(8,7,8,7),T(6,5,6,5)};
+  /*
   struct {
     bool operator() (const T& lhs, const T& rhs) const {
       return lhs.x != rhs.x ? lhs.x < rhs.x : lhs.y < rhs.y;
     }
   } compare;
   std::sort(input.begin(),input.end(),compare);
+  */
   Matrix mat;
   for(int i = 0; i < input.size(); i++) {
     mat.insert(input[i].x, input[i].y, input[i].v);
@@ -151,8 +177,6 @@ void test_stuff() {
   }
   std::cout << range.second->to_string() << std::endl;
 }
-*/
-
 int main() {
   test_pesAB();
   return 0;

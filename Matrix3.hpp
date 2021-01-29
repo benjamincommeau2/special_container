@@ -5,7 +5,6 @@
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/mem_fun.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -21,95 +20,62 @@ class Matrix {
   */ ///////////////////////////////////////////////////////////////////
   using Index = uint32_t;
   using Value = std::complex<double>;
-  using Clear = uint64_t;
   /* ///////////////////////////////////////////////////////////////////
   type T to store in container
   */ ///////////////////////////////////////////////////////////////////
   class T {
-    friend class Matrix;
-   private:
-    Index x_; Index y_; Clear c_;
+   friend class Matrix;
    public:
-    Value v_;
+    Index x_; Index y_; mutable Value v_;
     T() {}
-    T(const Index& x, const Index& y, const Clear& c, const Value& v) :
-      x_(x), y_(y), c_(c), v_(v) {}
+    T(const Index& x, const Index& y, const Value& v ) : x_(x), y_(y), v_(v) {}
     std::string to_string() const {
       std::ostringstream oss;
       oss.precision(2);
       oss << std::fixed ;
-      oss << "(" << x_ << "," << y_ << "," << c_ << ")";
-      oss << " ";
+      oss << "(" << x_ << "," << y_ << ")" << " ";
       oss << "(" << v_.real() << "," << v_.imag() << ")";
       return oss.str();
     }
   };
-  struct S{
-    friend class Matrix;
-   public:
-   mutable T* pt_;
-    S() {}
-    S(T* pt) {pt_ = pt;}
-    Index getX() const {return pt_->x_;}
-    Index getY() const {return pt_->y_;}
-    Clear getC() const {return pt_->c_;}
-  };
   /* ///////////////////////////////////////////////////////////////////
   Tags
   */ ///////////////////////////////////////////////////////////////////
-  struct XY {};
-  struct YX {};
-  struct CXY {};
-  /* ///////////////////////////////////////////////////////////////////
-  Type for Deque Container
-  */ ///////////////////////////////////////////////////////////////////
-  using Sequence = std::deque<T>;
-  Sequence sequence_;
+  struct order_xy {};
+  struct order_yx {};
+  struct random_access {};
   /* ///////////////////////////////////////////////////////////////////
   Type for Boost's Multi-Index Container
   */ ///////////////////////////////////////////////////////////////////
   using Container = boost::multi_index_container<
-    S, // the data type stored
+    T, // the data type stored
     boost::multi_index::indexed_by<
       boost::multi_index::ordered_unique<
-        boost::multi_index::tag<XY>,
+        boost::multi_index::tag<order_xy>,
         boost::multi_index::composite_key<
-          S,
-          boost::multi_index::const_mem_fun<S, Index, &S::getX>,
-          boost::multi_index::const_mem_fun<S, Index, &S::getY>
+          T,
+          boost::multi_index::member<T,Index,&T::x_>,
+          boost::multi_index::member<T,Index,&T::y_>
         >,
         boost::multi_index::composite_key_compare<
           std::less<Index>,
           std::less<Index>
         >
-      >
-      , 
+      >,
       boost::multi_index::ordered_unique<
-        boost::multi_index::tag<YX>,
+        boost::multi_index::tag<order_yx>,
         boost::multi_index::composite_key<
-          S,
-          boost::multi_index::const_mem_fun<S, Index, &S::getY>,
-          boost::multi_index::const_mem_fun<S, Index, &S::getX>
+          T,
+          boost::multi_index::member<T,Index,&T::y_>,
+          boost::multi_index::member<T,Index,&T::x_>
         >,
         boost::multi_index::composite_key_compare<
           std::less<Index>,
           std::less<Index>
         >
-      >
-      , 
-      boost::multi_index::ordered_unique<
-        boost::multi_index::tag<CXY>,
-        boost::multi_index::composite_key<
-          S,
-          boost::multi_index::const_mem_fun<S, Clear, &S::getC>,
-          boost::multi_index::const_mem_fun<S, Index, &S::getX>,
-          boost::multi_index::const_mem_fun<S, Index, &S::getY>
-        >,
-        boost::multi_index::composite_key_compare<
-          std::less<Clear>,
-          std::less<Index>,
-          std::less<Index>
-        >
+      >,
+      boost::multi_index::random_access<
+        boost::multi_index::tag<random_access>
       >
     >
   >;
@@ -118,11 +84,12 @@ class Matrix {
   */ ///////////////////////////////////////////////////////////////////
   Container container_;
   Index index_max_ = UINT32_MAX;
-  Clear clear_max_ = UINT64_MAX;
-  Clear c_ = 1;
-  Index index_last_= 0;
   /* ///////////////////////////////////////////////////////////////////
   implicit methods
+  */ ///////////////////////////////////////////////////////////////////
+  void insert(const Matrix::Index& x, const Matrix::Index& y,
+    const Matrix::Value& v);
+  std::string to_string() const;
   void xy_sort();
   void yx_sort();
   Container::index<order_xy>::type::iterator
@@ -144,53 +111,20 @@ class Matrix {
   Container::index<Matrix::random_access>::type::iterator
     random_access_end();
   Value getCoeff(const Index x, const Index y);
+  void clear();
   void reserve(Index m);
-  */ ///////////////////////////////////////////////////////////////////
-  void insert(const Matrix::Index& x, const Matrix::Index& y,
-    const Matrix::Value& v);
-  void hard_clear();
-  std::string to_string() const;
 };
 
-void Matrix::insert(const Matrix::Index& x, const Matrix::Index& y,
-  const Matrix::Value& v) {
-  sequence_.push_back(T(x,y,c_,v));
-  container_.insert(&sequence_[sequence_.size()-1]);
-  auto it = container_.begin();
-  (*it).pt_ = &sequence_[0];
-}
-
-void Matrix::hard_clear() {
-  container_.clear();
-  sequence_.clear();
-  index_last_ = 0;
-}
-
-std::string Matrix::to_string() const {
-  auto it_seq = sequence_.begin();
-  auto it_xy = container_.get<XY>().begin();
-  auto it_yx = container_.get<YX>().begin();
-  auto it_cxy = container_.get<CXY>().begin();
-  std::ostringstream oss;
-  oss << "seq(" << sequence_.size() << ") | ";
-  oss << "xy(" << container_.size() << ") | ";
-  oss << "yx(" << container_.size() << ") | ";
-  oss << "cxy(" << container_.size() << ")\n";
-  while(it_seq != sequence_.end()) {
-    oss << it_seq->to_string() << " | ";
-    oss << (*it_xy).pt_->to_string() << " | ";
-    oss << (*it_yx).pt_->to_string() << " | ";
-    oss << (*it_cxy).pt_->to_string() << "\n";
-    it_seq++; it_xy++; it_yx++; it_cxy++;
-  }
-  return oss.str();
-}
 /* ///////////////////////////////////////////////////////////////////
 explicit methods
+*/ ///////////////////////////////////////////////////////////////////
 void Matrix::reserve(Index m) {
   container_.get<random_access>().reserve(m);
 }
 
+void Matrix::clear() {
+  container_.clear();
+}
 
 Matrix::Value Matrix::getCoeff(const Matrix::Index x, const Matrix::Index y) {
   auto it = xy_find(x,y);
@@ -303,6 +237,24 @@ Matrix::xy_find(const Matrix::Index& x, const Matrix::Index& y) {
   return container_.get<order_xy>().find(std::make_tuple(x,y));
 }
 
+std::string Matrix::to_string() const {
+  auto it_xy = container_.get<order_xy>().cbegin();
+  auto it_yx = container_.get<order_yx>().cbegin();
+  auto it_random_access = container_.get<random_access>().cbegin();
+  std::string tmp = "";
+  tmp += "order_xy | ";
+  tmp += "order_yx | ";
+  tmp += "random_access\n";
+  while(it_xy != container_.get<order_xy>().cend()) {
+    tmp += it_xy->to_string() + " | ";
+    tmp += it_yx->to_string() + " | ";
+    tmp += it_random_access->to_string() + "\n";
+    it_xy++;
+    it_yx++;
+    it_random_access++;
+  }
+  return tmp;
+}
 
 void Matrix::xy_sort() {
   container_.get<random_access>().rearrange(
@@ -316,7 +268,10 @@ void Matrix::yx_sort() {
   );
 }
 
-*/ ///////////////////////////////////////////////////////////////////
+void Matrix::insert(const Matrix::Index& x, const Matrix::Index& y,
+  const Matrix::Value& v) {
+  container_.insert(T(x,y,v));
+}
 /*
 
 
