@@ -57,6 +57,9 @@ void test_pesAB() {
   }
   std::cout << "A=" << std::endl;
   std::cout << A.to_string() << std::endl;
+  A.sort_xy();
+  std::cout << "A=" << std::endl;
+  std::cout << A.to_string() << std::endl;
   /*
   Matrix B;
   std::vector<T> tB = {

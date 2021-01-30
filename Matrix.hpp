@@ -36,7 +36,7 @@ class Matrix {
       x_(x), y_(y), c_(c), v_(v) {}
     std::string to_string() const {
       std::ostringstream oss;
-      oss.precision(2);
+      oss.precision(1);
       oss << std::fixed ;
       oss << "(" << x_ << "," << y_ << "," << c_ << ")";
       oss << " ";
@@ -48,12 +48,19 @@ class Matrix {
     friend class Matrix;
    public:
    mutable T* pt_;
+   mutable Index i_;
     S() {}
-    S(T* pt) {pt_ = pt;}
+    S(T* pt, const Index& i) {pt_ = pt; i_ = i;}
     Index getX() const {return pt_->x_;}
     Index getY() const {return pt_->y_;}
     Clear getC() const {return pt_->c_;}
+    std::string to_string() const {
+      std::ostringstream oss;
+      oss << i_ << " " << pt_->to_string();
+      return oss.str();
+    }
   };
+
   /* ///////////////////////////////////////////////////////////////////
   Tags
   */ ///////////////////////////////////////////////////////////////////
@@ -62,6 +69,14 @@ class Matrix {
   struct CXY {};
   /* ///////////////////////////////////////////////////////////////////
   Type for Deque Container
+
+1. Insertion
+b. deque- All iterators and references are invalidated, unless the inserted member is at an end (front or back) of the deque (in which case all iterators are invalidated, but references to elements are unaffected). 
+2. Erasure 
+b. deque- All iterators and references are invalidated unless the erased members are at an end (front or back) of the deque (in which case only iterators and references to the erased members are invalidated) 
+3. Resizing 
+a. vector, deque, and list- As per insert/erase.
+
   */ ///////////////////////////////////////////////////////////////////
   using Sequence = std::deque<T>;
   Sequence sequence_;
@@ -123,7 +138,6 @@ class Matrix {
   Index index_last_= 0;
   /* ///////////////////////////////////////////////////////////////////
   implicit methods
-  void xy_sort();
   void yx_sort();
   Container::index<order_xy>::type::iterator
     xy_find(const Matrix::Index& x, const Matrix::Index& y);
@@ -150,14 +164,71 @@ class Matrix {
     const Matrix::Value& v);
   void hard_clear();
   std::string to_string() const;
+  template <class ForwardIt, class Compare> void
+    special_quicksort(ForwardIt first, ForwardIt last, Compare compare);
+  template<class ForwardIt, class UnaryPredicate> ForwardIt
+    special_partition(ForwardIt first, ForwardIt last, UnaryPredicate p);
+  template<class ForwardIt1, class ForwardIt2> constexpr void
+    special_iter_swap(ForwardIt1 a, ForwardIt2 b);
+  void sort_xy();
 };
+
+void Matrix::sort_xy() {
+  struct LessXY {
+     bool operator() (const T& lhs, const T& rhs) const {
+       return (lhs.x_ != rhs.x_) ? (lhs.x_ < rhs.x_) : (lhs.y_ < rhs.y_);
+     }
+  };
+  LessXY lessxy = LessXY();
+  //special_quicksort(sequence_.begin(), sequence_.end(), lessxy);
+  //auto it = container_.get<XY>().find(0,0);
+  //std::cout << std::distance(sequence_.begin(),*((*it).pt_)) << std::endl;
+  std::sort(sequence_.begin(), sequence_.end(), lessxy);
+}
+
+template <class ForwardIt, class Compare>
+void
+Matrix::special_quicksort(ForwardIt first, ForwardIt last, Compare compare)
+{
+   if(first == last) return;
+   auto pivot = *std::next(first, std::distance(first,last)/2);
+   ForwardIt middle1 = std::partition(first, last,
+     [pivot,compare](const auto& em){ return compare(em,pivot); });
+   ForwardIt middle2 = std::partition(middle1, last,
+     [pivot,compare](const auto& em){ return !compare(em,pivot); });
+   special_quicksort(first, middle1, compare);
+   special_quicksort(middle2, last, compare);
+}
+
+template<class ForwardIt, class UnaryPredicate>
+ForwardIt
+Matrix::special_partition(ForwardIt first, ForwardIt last, UnaryPredicate p)
+{
+  first = std::find_if_not(first, last, p);
+  if (first == last) return first;
+    for (ForwardIt i = std::next(first); i != last; ++i) {
+      if (p(*i)) {
+        special_iter_swap(i, first);
+        ++first;
+      }
+    }
+    return first;
+}
+
+template<class ForwardIt1, class ForwardIt2>
+constexpr void
+Matrix::special_iter_swap(ForwardIt1 a, ForwardIt2 b) 
+  // constexpr since C++20
+{
+   std::swap(*a, *b);
+}
 
 void Matrix::insert(const Matrix::Index& x, const Matrix::Index& y,
   const Matrix::Value& v) {
   sequence_.push_back(T(x,y,c_,v));
-  container_.insert(&sequence_[sequence_.size()-1]);
-  auto it = container_.begin();
-  (*it).pt_ = &sequence_[0];
+  container_.insert(S(&sequence_[sequence_.size()-1],sequence_.size()-1));
+  //auto it = container_.begin();
+  //(*it).pt_ = &sequence_[0];
 }
 
 void Matrix::hard_clear() {
@@ -178,13 +249,15 @@ std::string Matrix::to_string() const {
   oss << "cxy(" << container_.size() << ")\n";
   while(it_seq != sequence_.end()) {
     oss << it_seq->to_string() << " | ";
-    oss << (*it_xy).pt_->to_string() << " | ";
-    oss << (*it_yx).pt_->to_string() << " | ";
-    oss << (*it_cxy).pt_->to_string() << "\n";
+    oss << it_xy->to_string() << " | ";
+    oss << it_yx->to_string() << " | ";
+    oss << it_cxy->to_string() << "\n";
     it_seq++; it_xy++; it_yx++; it_cxy++;
   }
   return oss.str();
 }
+
+
 /* ///////////////////////////////////////////////////////////////////
 explicit methods
 void Matrix::reserve(Index m) {
@@ -304,11 +377,6 @@ Matrix::xy_find(const Matrix::Index& x, const Matrix::Index& y) {
 }
 
 
-void Matrix::xy_sort() {
-  container_.get<random_access>().rearrange(
-    container_.get<order_xy>().begin()
-  );
-}
 
 void Matrix::yx_sort() {
   container_.get<random_access>().rearrange(
